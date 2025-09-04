@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}지역 비교{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+  <h2><i class="bi bi-bar-chart"></i> 지역 비교</h2>
+  <p class="text-muted">여러 지역을 선택하여 비교해보세요</p>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <!-- 비교 폼 -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h4><i class="bi bi-plus-circle"></i> 새로운 비교 만들기</h4>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          
+          <div class="mb-3">
+            <label for="{{ form.name.id_for_label }}" class="form-label">
+              <i class="bi bi-tag"></i> 비교 이름
+            </label>
+            {{ form.name }}
+            <div class="form-text">이 비교에 이름을 붙여주세요 (예: "이사 후보 지역들")</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">
+              <i class="bi bi-geo-alt"></i> 비교할 지역 선택
+            </label>
+            
+            <!-- 시/도별 그룹화된 지역 선택 -->
+            <div class="accordion" id="regionAccordion">
+              {% for city, regions in grouped_regions.items %}
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
+                      <i class="bi bi-geo-alt-fill text-primary me-2"></i>
+                      {{ city }} ({{ regions|length }}개 지역)
+                    </button>
+                  </h2>
+                  <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#regionAccordion">
+                    <div class="accordion-body">
+                      <div class="row">
+                        {% for region in regions %}
+                          <div class="col-md-6 col-lg-4 mb-2">
+                            <div class="form-check">
+                              <input class="form-check-input" type="checkbox" name="regions" value="{{ region.id }}" id="region_{{ region.id }}">
+                              <label class="form-check-label" for="region_{{ region.id }}">
+                                {{ region.name }}
+                              </label>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            
+            <div class="form-text mt-2">
+              <i class="bi bi-info-circle"></i> 최소 2개, 최대 5개 지역을 선택하세요
+              <span id="selectedCount" class="badge bg-primary ms-2">선택된 지역: 0개</span>
+            </div>
+          </div>
+          
+          {% if form.errors %}
+            <div class="alert alert-danger">
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                  <p class="mb-0">{{ error }}</p>
+                {% endfor %}
+              {% endfor %}
+            </div>
+          {% endif %}
+          
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-bar-chart"></i> 비교하기
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 내 비교 목록 -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="bi bi-list"></i> 내 비교 목록</h5>
+      </div>
+      <div class="card-body">
+        {% if user_comparisons %}
+          {% for comparison in user_comparisons %}
+            <div class="border-bottom pb-3 mb-3">
+              <h6 class="mb-2">{{ comparison.name }}</h6>
+              <div class="mb-2">
+                {% for region in comparison.regions.all %}
+                  <span class="badge bg-primary me-1 mb-1">
+                    {{ region.name }}<br>
+                    <small>{{ region.city }}</small>
+                  </span>
+                {% endfor %}
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">{{ comparison.created_at|date:"Y-m-d" }}</small>
+                <a href="{% url 'comparison_detail' comparison.pk %}" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-eye"></i> 보기
+                </a>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted text-center py-3">아직 비교를 만들지 않았습니다.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 비교 가이드 -->
+<div class="mt-5">
+  <div class="card">
+    <div class="card-header">
+      <h5><i class="bi bi-info-circle"></i> 비교 기능 안내</h5>
+    </div>
+    <div class="card-body">
+      <p>지역 비교 기능을 통해 다음과 같은 정보를 확인할 수 있습니다:</p>
+      <ul>
+        <li><strong>교통 점수 비교:</strong> 각 지역의 교통 편의성 비교</li>
+        <li><strong>교육 점수 비교:</strong> 각 지역의 교육 환경 비교</li>
+        <li><strong>생활비 수준 비교:</strong> 각 지역의 생활비 수준 비교</li>
+        <li><strong>사용자 평점 비교:</strong> 각 지역의 사용자 평점 비교</li>
+        <li><strong>리뷰 수 비교:</strong> 각 지역의 리뷰 수 비교</li>
+      </ul>
+      <p class="mb-0 text-muted">
+        <small>비교 결과를 바탕으로 가장 적합한 지역을 선택하세요.</small>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('input[name="regions"]');
+    const selectedCount = document.getElementById('selectedCount');
+    const submitButton = document.querySelector('button[type="submit"]');
+    
+    function updateSelectedCount() {
+        const checked = document.querySelectorAll('input[name="regions"]:checked');
+        const count = checked.length;
+        
+        selectedCount.textContent = `선택된 지역: ${count}개`;
+        
+        // 배지 색상 변경
+        if (count === 0) {
+            selectedCount.className = 'badge bg-secondary ms-2';
+        } else if (count < 2) {
+            selectedCount.className = 'badge bg-warning ms-2';
+        } else if (count > 5) {
+            selectedCount.className = 'badge bg-danger ms-2';
+        } else {
+            selectedCount.className = 'badge bg-success ms-2';
+        }
+        
+        // 제출 버튼 활성화/비활성화
+        if (count >= 2 && count <= 5) {
+            submitButton.disabled = false;
+            submitButton.classList.remove('btn-secondary');
+            submitButton.classList.add('btn-primary');
+        } else {
+            submitButton.disabled = true;
+            submitButton.classList.remove('btn-primary');
+            submitButton.classList.add('btn-secondary');
+        }
+    }
+    
+    // 체크박스 변경 이벤트 리스너
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const checked = document.querySelectorAll('input[name="regions"]:checked');
+            
+            // 최대 5개까지만 선택 가능
+            if (checked.length > 5) {
+                this.checked = false;
+                alert('최대 5개 지역까지만 선택할 수 있습니다.');
+            }
+            
+            updateSelectedCount();
+        });
+    });
+    
+    // 초기 상태 설정
+    updateSelectedCount();
+});
+</script>
+{% endblock %} 

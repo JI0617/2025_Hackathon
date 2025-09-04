@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}회원가입{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header text-center">
+        <h3><i class="bi bi-person-plus"></i> 회원가입</h3>
+        <p class="text-muted mb-0">지역 평가 서비스에 가입하세요</p>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          
+          {% for field in form %}
+            <div class="mb-3">
+              <label for="{{ field.id_for_label }}" class="form-label">
+                {{ field.label }}
+                {% if field.field.required %}
+                  <span class="text-danger">*</span>
+                {% endif %}
+              </label>
+              {{ field }}
+              {% if field.help_text %}
+                <div class="form-text">{{ field.help_text }}</div>
+              {% endif %}
+              {% if field.errors %}
+                <div class="text-danger">
+                  {% for error in field.errors %}
+                    <small>{{ error }}</small>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+          
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-person-plus"></i> 회원가입
+            </button>
+          </div>
+        </form>
+        
+        <hr>
+        
+        <div class="text-center">
+          <p class="mb-0">이미 계정이 있으신가요?</p>
+          <a href="{% url 'login' %}" class="btn btn-outline-primary">
+            <i class="bi bi-box-arrow-in-right"></i> 로그인
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

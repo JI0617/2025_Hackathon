@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}생활비 계산기{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+  <h2><i class="bi bi-calculator"></i> 생활비 계산기</h2>
+  <p class="text-muted">지역별 예상 생활비를 계산해보세요</p>
+</div>
+
+{% if result %}
+  <!-- 계산 결과 -->
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card border-success">
+        <div class="card-header bg-success text-white">
+          <h4><i class="bi bi-check-circle"></i> 계산 결과</h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h5><i class="bi bi-geo-alt"></i> 선택한 지역</h5>
+              <p class="h4 text-primary">{{ result.region.name }}</p>
+              <p class="text-muted">생활비 수준: {{ result.cost_level }}</p>
+            </div>
+            <div class="col-md-6">
+              <h5><i class="bi bi-people"></i> 가족 구성</h5>
+              <p class="h4 text-info">{{ result.family_size }}명</p>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <div class="text-center">
+                <h6><i class="bi bi-cash-coin text-success"></i> 월 소득</h6>
+                <p class="h5 text-success">{{ result.monthly_income|floatformat:0 }}원</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-center">
+                <h6><i class="bi bi-cart text-warning"></i> 예상 월 생활비</h6>
+                <p class="h5 text-warning">{{ result.monthly_cost|floatformat:0 }}원</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-center">
+                <h6><i class="bi bi-piggy-bank text-{% if result.remaining >= 0 %}success{% else %}danger{% endif %}"></i> 잔여 금액</h6>
+                <p class="h5 text-{% if result.remaining >= 0 %}success{% else %}danger{% endif %}">{{ result.remaining|floatformat:0 }}원</p>
+              </div>
+            </div>
+          </div>
+          
+          {% if result.remaining >= 0 %}
+            <div class="alert alert-success mt-3">
+              <i class="bi bi-emoji-smile"></i> 
+              <strong>좋습니다!</strong> 이 지역에서 생활하기에 충분한 소득입니다.
+            </div>
+          {% else %}
+            <div class="alert alert-danger mt-3">
+              <i class="bi bi-exclamation-triangle"></i> 
+              <strong>주의!</strong> 예상 생활비가 월 소득을 초과합니다. 다른 지역을 고려해보세요.
+            </div>
+          {% endif %}
+          
+          <div class="text-center mt-3">
+            <a href="{% url 'calculator' %}" class="btn btn-primary">
+              <i class="bi bi-arrow-clockwise"></i> 다시 계산하기
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <!-- 계산기 폼 -->
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header">
+          <h4><i class="bi bi-calculator"></i> 생활비 계산</h4>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="region" class="form-label">
+                    <i class="bi bi-geo-alt"></i> 지역 선택
+                  </label>
+                  <select name="region" id="region" class="form-select" required>
+                    <option value="">지역을 선택하세요</option>
+                    {% for region in regions %}
+                      <option value="{{ region.name }}">
+                        {{ region.name }} ({{ region.cost_level }})
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="monthly_income" class="form-label">
+                    <i class="bi bi-cash-coin"></i> 월 소득 (원)
+                  </label>
+                  <input type="number" class="form-control" id="monthly_income" name="monthly_income" 
+                         placeholder="예: 3000000" required>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="family_size" class="form-label">
+                <i class="bi bi-people"></i> 가족 구성원 수
+              </label>
+              <input type="number" class="form-control" id="family_size" name="family_size" 
+                     value="1" min="1" max="10" required>
+              <div class="form-text">본인 포함한 가족 구성원 수를 입력하세요</div>
+            </div>
+            
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-calculator"></i> 계산하기
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- 계산기 안내 -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5><i class="bi bi-info-circle"></i> 계산기 안내</h5>
+        </div>
+        <div class="card-body">
+          <p>이 계산기는 다음과 같은 기준으로 생활비를 계산합니다:</p>
+          <ul>
+            <li><strong>매우낮음:</strong> 월 80만원</li>
+            <li><strong>낮음:</strong> 월 100만원</li>
+            <li><strong>보통:</strong> 월 120만원</li>
+            <li><strong>높음:</strong> 월 150만원</li>
+            <li><strong>매우높음:</strong> 월 200만원</li>
+          </ul>
+          <p class="mb-0 text-muted">
+            <small>* 실제 생활비는 개인적인 생활 방식과 구체적인 지역에 따라 달라질 수 있습니다.</small>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %} 

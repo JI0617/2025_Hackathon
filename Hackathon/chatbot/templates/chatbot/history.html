@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}채팅 기록{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-10 mx-auto">
+      <div class="card shadow">
+        <div class="card-header bg-info text-white">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+              <i class="bi bi-clock-history"></i> 채팅 기록
+            </h5>
+            <a href="{% url 'chat' %}" class="btn btn-outline-light btn-sm">
+              <i class="bi bi-robot"></i> 새 채팅
+            </a>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          {% if sessions %}
+            <div class="row">
+              {% for session in sessions %}
+                <div class="col-md-6 mb-3">
+                  <div class="card h-100 border">
+                    <div class="card-body">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">
+                          <i class="bi bi-chat-dots text-primary"></i> 
+                          세션 #{{ session.session_id|slice:":8" }}
+                        </h6>
+                        <small class="text-muted">
+                          {{ session.updated_at|date:"m/d H:i" }}
+                        </small>
+                      </div>
+                      
+                      <p class="card-text text-muted small">
+                        메시지 수: {{ session.messages.count }}개
+                      </p>
+                      
+                      <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                          {{ session.created_at|date:"Y년 m월 d일" }}
+                        </small>
+                        <a href="{% url 'chat_session_detail' session.session_id %}" 
+                           class="btn btn-outline-primary btn-sm">
+                          <i class="bi bi-eye"></i> 보기
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-5">
+              <i class="bi bi-chat-dots display-1 text-muted"></i>
+              <h4 class="mt-3">채팅 기록이 없습니다</h4>
+              <p class="text-muted">아직 채팅을 시작하지 않으셨네요.</p>
+              <a href="{% url 'chat' %}" class="btn btn-primary">
+                <i class="bi bi-robot"></i> 챗봇 시작하기
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 
