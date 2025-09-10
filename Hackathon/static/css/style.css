@@ -16,6 +16,162 @@ body {
   background-attachment: fixed;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   min-height: 100vh;
+  padding-top: 0; /* 네비게이션 바 때문에 추가 패딩 제거 */
+}
+
+/* 모든 페이지의 첫 번째 콘텐츠가 네비게이션 바에 가려지지 않도록 보장 */
+main.container {
+  margin-top: 8rem !important;
+  padding-top: 3rem;
+}
+
+/* 모든 페이지의 첫 번째 요소에 추가 여백 */
+main.container > *:first-child {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  min-height: 100px;
+}
+
+/* 텍스트 섹션들에 대한 추가 보호 */
+.text-center,
+.card-header,
+.alert,
+h1, h2, h3, h4, h5, h6 {
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+/* 페이지 제목들에 대한 특별 보호 */
+.page-title,
+.section-title {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 모든 텍스트 섹션에 강력한 보호 */
+.text-center {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* 모든 카드 헤더 보호 */
+.card-header {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+}
+
+/* 계산기 페이지 데스크톱 스타일 */
+.calculator-intro {
+  padding: 3rem 0;
+  margin-top: 2rem;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.calculator-intro h2 {
+  word-wrap: break-word;
+  white-space: normal;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+.calculator-intro p {
+  word-wrap: break-word;
+  white-space: normal;
+  line-height: 1.5;
+}
+
+/* 홈 페이지 히어로 섹션 특별 여백 */
+.home-hero {
+  padding-top: 4rem;
+  margin-top: 3rem;
+  min-height: 180px; /* 최소 높이 보장 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.home-hero h1 {
+  word-wrap: break-word;
+  white-space: normal;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+.home-hero p {
+  word-wrap: break-word;
+  white-space: normal;
+  line-height: 1.5;
+}
+
+/* 모바일에서 더 적절한 여백 */
+@media (max-width: 768px) {
+  main.container {
+    margin-top: 7rem !important;
+    padding-top: 2.5rem;
+  }
+  
+  /* 모바일에서도 모든 페이지의 첫 번째 요소에 여백 */
+  main.container > *:first-child {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    min-height: 80px;
+  }
+  
+  /* 모바일에서 모든 텍스트 섹션 보호 */
+  .text-center {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    min-height: 70px;
+  }
+  
+  .page-title {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    min-height: 100px;
+  }
+  
+  .card-header {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    min-height: 50px;
+  }
+  
+  .home-hero {
+    padding-top: 3.5rem;
+    margin-top: 2.5rem;
+    min-height: 160px; /* 모바일에서도 최소 높이 보장 */
+  }
+  
+  .home-hero h1 {
+    font-size: 2rem;
+    line-height: 1.3;
+    margin-bottom: 1rem;
+    word-wrap: break-word;
+    white-space: normal;
+  }
+  
+  .home-hero p {
+    font-size: 1.1rem;
+    line-height: 1.4;
+    padding: 0 15px;
+    word-wrap: break-word;
+    white-space: normal;
+  }
 }
 
 .container {
@@ -91,6 +247,9 @@ h1, h2, h3 {
   background: rgba(15, 23, 42, 0.95) !important;
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem 0; /* 패딩 증가 */
+  min-height: 80px; /* 최소 높이 명시적 설정 */
+  z-index: 1030; /* 다른 요소들 위에 표시 */
 }
 
 /* 라이트모드 네비게이션 바 */
@@ -451,6 +610,51 @@ h1, h2, h3 {
   
   .stats-card {
     margin-bottom: 1rem;
+  }
+  
+  /* 모바일에서 텍스트 잘림 방지 */
+  .text-center p {
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.5;
+    padding: 0 10px;
+  }
+  
+  /* 모든 화면 크기에서 텍스트 가시성 보장 */
+  .text-center {
+    padding: 0 15px;
+  }
+  
+  /* 긴 텍스트 줄바꿈 보장 */
+  .text-muted {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+  
+  /* 계산기 페이지 특별 스타일 */
+  .calculator-intro {
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-top: 2rem; /* 추가 여백 */
+  }
+  
+  .calculator-intro h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+  }
+  
+  .calculator-intro p {
+    font-size: 1rem;
+    color: #6c757d;
+    margin-bottom: 0;
+    line-height: 1.4;
+    word-wrap: break-word;
+    white-space: normal;
   }
 }
 
