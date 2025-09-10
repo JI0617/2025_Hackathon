@@ -4,575 +4,325 @@
 {% block title %}{{ comparison.name }} - 지역 비교{% endblock %}
 
 {% block content %}
-<div class="container">
-  <div class="row">
-    <div class="col-12">
-      <!-- 헤더 -->
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h2><i class="bi bi-bar-chart"></i> {{ comparison.name }}</h2>
-          <p class="text-muted mb-0">비교 생성일: {{ comparison.created_at|date:"Y년 m월 d일" }}</p>
-        </div>
-        <div>
-          <a href="{% url 'comparison' %}" class="btn btn-outline-primary">
-            <i class="bi bi-arrow-left"></i> 비교 목록으로
+<div class="text-center mb-4 page-title">
+  <h2><i class="bi bi-arrow-left-right"></i> {{ comparison.name }}</h2>
+  <p class="text-muted">{{ comparison.regions.count }}개 지역 비교</p>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5><i class="bi bi-bar-chart"></i> 비교 결과</h5>
+        <div class="btn-group">
+          <a href="{% url 'edit_comparison' comparison.id %}" class="btn btn-outline-warning btn-sm">
+            <i class="bi bi-pencil"></i> 수정
+          </a>
+          <a href="{% url 'delete_comparison' comparison.id %}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-trash"></i> 삭제
           </a>
         </div>
       </div>
-
-      <!-- 비교 결과 -->
-      <div class="card mb-4">
-        <div class="card-header">
-          <h4><i class="bi bi-graph-up"></i> 비교 결과</h4>
-        </div>
-        <div class="card-body">
-          {% if comparison_data %}
-            <div class="table-responsive">
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th>지역명</th>
-                    <th>교통 점수</th>
-                    <th>교육 점수</th>
-                    <th>의료 점수</th>
-                    <th>생활비 수준</th>
-                    <th>평균 평점</th>
-                    <th>리뷰 수</th>
-                    <th>상세보기</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for data in comparison_data %}
-                    <tr>
-                      <td>
-                        <strong>{{ data.region.name }}</strong>
-                        <br>
-                        <small class="text-muted">{{ data.region.city }}</small>
-                        <br>
-                        <small class="text-muted">{{ data.region.description|truncatechars:50 }}</small>
-                      </td>
-                      <td>
-                        <div class="d-flex align-items-center">
-                          <div class="progress me-2" style="width: 60px; height: 20px;">
-                            <div class="progress-bar bg-success" style="width: {{ data.region.traffic_score }}%"></div>
-                          </div>
-                          <span class="badge bg-success">{{ data.region.traffic_score }}점</span>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>지역</th>
+                <th>교통</th>
+                <th>교육</th>
+                <th>의료</th>
+                <th>생활비</th>
+                <th>인구</th>
+                <th>면적</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for region in comparison_data %}
+                <tr>
+                  <td>
+                    <strong>{{ region.name }}</strong><br>
+                    <small class="text-muted">{{ region.city }}</small>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="progress me-2" style="width: 60px; height: 20px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {% widthratio region.traffic_score 10 100 %}%">
+                          {{ region.traffic_score }}
                         </div>
-                      </td>
-                      <td>
-                        <div class="d-flex align-items-center">
-                          <div class="progress me-2" style="width: 60px; height: 20px;">
-                            <div class="progress-bar bg-info" style="width: {{ data.region.education_score }}%"></div>
-                          </div>
-                          <span class="badge bg-info">{{ data.region.education_score }}점</span>
+                      </div>
+                      <span class="fw-bold">{{ region.traffic_score }}점</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="progress me-2" style="width: 60px; height: 20px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {% widthratio region.education_score 10 100 %}%">
+                          {{ region.education_score }}
                         </div>
-                      </td>
-                      <td>
-                        <div class="d-flex align-items-center">
-                          <div class="progress me-2" style="width: 60px; height: 20px;">
-                            <div class="progress-bar bg-danger" style="width: {{ data.region.medical_score }}%"></div>
-                          </div>
-                          <span class="badge bg-danger">{{ data.region.medical_score }}점</span>
+                      </div>
+                      <span class="fw-bold">{{ region.education_score }}점</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="progress me-2" style="width: 60px; height: 20px;">
+                        <div class="progress-bar bg-info" role="progressbar" 
+                             style="width: {% widthratio region.medical_score 10 100 %}%">
+                          {{ region.medical_score }}
                         </div>
-                      </td>
-                      <td>
-                        <span class="badge 
-                          {% if data.region.cost_level == '매우낮음' or data.region.cost_level == '낮음' %}bg-success
-                          {% elif data.region.cost_level == '보통' %}bg-warning
-                          {% else %}bg-danger
-                          {% endif %}">
-                          {{ data.region.cost_level }}
-                        </span>
-                      </td>
-                      <td>
-                        <div class="d-flex align-items-center">
-                          {% for i in "12345" %}
-                            {% if forloop.counter <= data.avg_rating %}
-                              <i class="bi bi-star-fill text-warning"></i>
-                            {% else %}
-                              <i class="bi bi-star text-muted"></i>
-                            {% endif %}
-                          {% endfor %}
-                          <span class="ms-2">{{ data.avg_rating }}점</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span class="badge bg-secondary">{{ data.review_count }}개</span>
-                      </td>
-                      <td>
-                        <a href="{% url 'region_detail' data.region.name %}" class="btn btn-sm btn-outline-primary">
-                          <i class="bi bi-eye"></i> 보기
-                        </a>
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <div class="text-center py-4">
-              <i class="bi bi-exclamation-triangle display-4 text-muted"></i>
-              <h5 class="text-muted mt-3">비교할 지역이 없습니다</h5>
-              <p class="text-muted">비교에 포함된 지역이 없거나 삭제되었습니다.</p>
-            </div>
-          {% endif %}
+                      </div>
+                      <span class="fw-bold">{{ region.medical_score }}점</span>
+                    </div>
+                  </td>
+                  <td>
+                    {% if region.cost_level == '매우낮음' %}
+                      <span class="badge bg-success">{{ region.cost_level }}</span>
+                    {% elif region.cost_level == '낮음' %}
+                      <span class="badge bg-success">{{ region.cost_level }}</span>
+                    {% elif region.cost_level == '보통' %}
+                      <span class="badge bg-warning">{{ region.cost_level }}</span>
+                    {% elif region.cost_level == '높음' %}
+                      <span class="badge bg-danger">{{ region.cost_level }}</span>
+                    {% else %}
+                      <span class="badge bg-danger">{{ region.cost_level }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if region.population %}
+                      {{ region.population|floatformat:0 }}명
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if region.area %}
+                      {{ region.area }}km²
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </div>
-
-      <!-- 차트 영역 -->
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <!-- 통계 -->
+    {% if stats %}
       <div class="card mb-4">
         <div class="card-header">
-          <h4><i class="bi bi-graph-up"></i> 시각적 비교</h4>
+          <h6><i class="bi bi-graph-up"></i> 통계</h6>
         </div>
         <div class="card-body">
-          {% if comparison_data %}
-            <!-- 차트 탭 -->
-            <ul class="nav nav-tabs mb-3" id="chartTabs" role="tablist">
-              <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="radar-tab" data-bs-toggle="tab" data-bs-target="#radar-chart" type="button" role="tab">
-                  <i class="bi bi-radar"></i> 레이더 차트
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link" id="bar-tab" data-bs-toggle="tab" data-bs-target="#bar-chart" type="button" role="tab">
-                  <i class="bi bi-bar-chart"></i> 막대 차트
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link" id="line-tab" data-bs-toggle="tab" data-bs-target="#line-chart" type="button" role="tab">
-                  <i class="bi bi-graph-up"></i> 선형 차트
-                </button>
-              </li>
-            </ul>
-            
-            <!-- 차트 콘텐츠 -->
-            <div class="tab-content" id="chartTabContent">
-              <!-- 레이더 차트 -->
-              <div class="tab-pane fade show active" id="radar-chart" role="tabpanel">
-                <div class="row">
-                  <div class="col-12">
-                    <canvas id="radarChart" width="400" height="200"></canvas>
-                  </div>
-                </div>
+          <div class="mb-3">
+            <h6>교통</h6>
+            <div class="row text-center">
+              <div class="col-4">
+                <small class="text-muted">최고</small><br>
+                <strong class="text-success">{{ stats.traffic.max }}</strong>
               </div>
-              
-              <!-- 막대 차트 -->
-              <div class="tab-pane fade" id="bar-chart" role="tabpanel">
-                <div class="row">
-                  <div class="col-12">
-                    <canvas id="barChart" width="400" height="200"></canvas>
-                  </div>
-                </div>
+              <div class="col-4">
+                <small class="text-muted">평균</small><br>
+                <strong>{{ stats.traffic.avg|floatformat:1 }}</strong>
               </div>
-              
-              <!-- 선형 차트 -->
-              <div class="tab-pane fade" id="line-chart" role="tabpanel">
-                <div class="row">
-                  <div class="col-12">
-                    <canvas id="lineChart" width="400" height="200"></canvas>
-                  </div>
-                </div>
+              <div class="col-4">
+                <small class="text-muted">최저</small><br>
+                <strong class="text-danger">{{ stats.traffic.min }}</strong>
               </div>
             </div>
-          {% else %}
-            <div class="text-center py-4">
-              <i class="bi bi-exclamation-triangle display-4 text-muted"></i>
-              <h5 class="text-muted mt-3">비교할 지역이 없습니다</h5>
-              <p class="text-muted">비교에 포함된 지역이 없거나 삭제되었습니다.</p>
+          </div>
+          
+          <div class="mb-3">
+            <h6>교육</h6>
+            <div class="row text-center">
+              <div class="col-4">
+                <small class="text-muted">최고</small><br>
+                <strong class="text-success">{{ stats.education.max }}</strong>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">평균</small><br>
+                <strong>{{ stats.education.avg|floatformat:1 }}</strong>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">최저</small><br>
+                <strong class="text-danger">{{ stats.education.min }}</strong>
+              </div>
             </div>
-          {% endif %}
+          </div>
+          
+          <div class="mb-3">
+            <h6>의료</h6>
+            <div class="row text-center">
+              <div class="col-4">
+                <small class="text-muted">최고</small><br>
+                <strong class="text-success">{{ stats.medical.max }}</strong>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">평균</small><br>
+                <strong>{{ stats.medical.avg|floatformat:1 }}</strong>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">최저</small><br>
+                <strong class="text-danger">{{ stats.medical.min }}</strong>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- 지도 비교 -->
-      <div class="card mb-4">
-        <div class="card-header">
-          <h4><i class="bi bi-geo-alt-fill text-primary"></i> 지도 비교</h4>
-        </div>
-        <div class="card-body">
-          {% if comparison_data %}
-            <div class="row">
-              <div class="col-12">
-                <div id="comparisonMap" style="height: 500px; width: 100%; border-radius: 8px;"></div>
-              </div>
-            </div>
-            <div class="mt-3">
-              <div class="row">
-                <div class="col-md-6">
-                  <h6><i class="bi bi-info-circle"></i> 지도 범례</h6>
-                  <div class="d-flex flex-wrap gap-2">
-                    {% for data in comparison_data %}
-                      <span class="badge" style="background-color: {{ data.color }}; color: white;">
-                        {{ data.region.name }}
-                      </span>
-                    {% endfor %}
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <h6><i class="bi bi-geo-alt"></i> 지도 기능</h6>
-                  <ul class="list-unstyled">
-                    <li><i class="bi bi-geo-alt-fill text-primary"></i> 마커를 클릭하면 지역 정보를 확인할 수 있습니다</li>
-                    <li><i class="bi bi-zoom-in text-success"></i> 마우스 휠로 확대/축소가 가능합니다</li>
-                    <li><i class="bi bi-arrow-move text-info"></i> 드래그로 지도를 이동할 수 있습니다</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          {% else %}
-            <div class="text-center py-4">
-              <i class="bi bi-exclamation-triangle display-4 text-muted"></i>
-              <h5 class="text-muted mt-3">비교할 지역이 없습니다</h5>
-              <p class="text-muted">비교에 포함된 지역이 없거나 삭제되었습니다.</p>
-            </div>
-          {% endif %}
-        </div>
+    {% endif %}
+    
+    <!-- 추천 지역 -->
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-trophy"></i> 추천 지역</h6>
       </div>
-
-      <!-- 추천 결과 -->
-      <div class="card">
-        <div class="card-header">
-          <h4><i class="bi bi-trophy"></i> 추천 결과</h4>
-        </div>
-        <div class="card-body">
-          {% if comparison_data %}
-            {% with best_region=comparison_data|first %}
-              <div class="alert alert-success">
-                <h5><i class="bi bi-star-fill"></i> 추천 지역: {{ best_region.region.name }}</h5>
-                <p class="mb-0">
-                  종합적으로 가장 우수한 지역으로 추천됩니다. 
-                  <a href="{% url 'region_detail' best_region.region.name %}" class="alert-link">상세 정보 보기</a>
-                </p>
+      <div class="card-body">
+        {% for region in comparison_data %}
+          {% with total_score=region.traffic_score|add:region.education_score|add:region.medical_score %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <strong>{{ region.name }}</strong><br>
+                <small class="text-muted">{{ region.city }}</small>
               </div>
-            {% endwith %}
-          {% endif %}
-        </div>
+              <div class="text-end">
+                <span class="badge bg-primary">{{ total_score }}/30</span>
+              </div>
+            </div>
+          {% endwith %}
+        {% endfor %}
       </div>
     </div>
   </div>
 </div>
 
-<style>
-.table th {
-  background-color: #f8f9fa;
-  border-top: none;
-}
+<!-- 차트 -->
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-bus-front"></i> 교통 점수</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="trafficChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-book"></i> 교육 점수</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="educationChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-hospital"></i> 의료 점수</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="medicalChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
 
-.progress {
-  border-radius: 10px;
-}
+<div class="text-center">
+  <a href="{% url 'comparison_list' %}" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left"></i> 목록으로
+  </a>
+  <a href="{% url 'edit_comparison' comparison.id %}" class="btn btn-warning">
+    <i class="bi bi-pencil"></i> 수정하기
+  </a>
+</div>
 
-.badge {
-  font-size: 0.8rem;
-}
-
-.alert-link {
-  font-weight: 600;
-}
-
-canvas {
-  max-height: 400px;
-}
-</style>
-
-{% if comparison_data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // 차트 데이터 준비
-    const comparisonData = [
-        {% for data in comparison_data %}
-        {
-            name: "{{ data.region.name }}",
-            city: "{{ data.region.city }}",
-            traffic: {{ data.region.traffic_score }},
-            education: {{ data.region.education_score }},
-            medical: {{ data.region.medical_score }},
-            avgRating: {{ data.avg_rating }},
-            reviewCount: {{ data.review_count }}
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ];
+// 차트 생성
+const regions = {{ comparison_data|safe }};
 
-    const colors = [
-        'rgba(54, 162, 235, 0.6)',   // 파란색
-        'rgba(255, 99, 132, 0.6)',   // 빨간색
-        'rgba(255, 205, 86, 0.6)',   // 노란색
-        'rgba(75, 192, 192, 0.6)',   // 청록색
-        'rgba(153, 102, 255, 0.6)'   // 보라색
-    ];
-
-    const borderColors = [
-        'rgba(54, 162, 235, 1)',
-        'rgba(255, 99, 132, 1)',
-        'rgba(255, 205, 86, 1)',
-        'rgba(75, 192, 192, 1)',
-        'rgba(153, 102, 255, 1)'
-    ];
-
-    // 1. 레이더 차트
-    const radarCtx = document.getElementById('radarChart').getContext('2d');
-    new Chart(radarCtx, {
-        type: 'radar',
-        data: {
-            labels: ['교통', '교육', '의료', '평점', '리뷰수'],
-            datasets: comparisonData.map((data, index) => ({
-                label: data.name,
-                data: [
-                    data.traffic,
-                    data.education,
-                    data.medical,
-                    data.avgRating * 20, // 5점 만점을 100점으로 변환
-                    Math.min(data.reviewCount * 10, 100) // 리뷰 수를 100점으로 변환 (최대 10개)
-                ],
-                backgroundColor: colors[index % colors.length],
-                borderColor: borderColors[index % borderColors.length],
-                borderWidth: 2,
-                pointBackgroundColor: borderColors[index % borderColors.length],
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: borderColors[index % borderColors.length]
-            }))
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: '지역별 종합 점수 비교'
-                },
-                legend: {
-                    position: 'bottom'
-                }
-            },
-            scales: {
-                r: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        stepSize: 20
-                    }
-                }
-            }
-        }
-    });
-
-    // 2. 막대 차트
-    const barCtx = document.getElementById('barChart').getContext('2d');
-    new Chart(barCtx, {
-        type: 'bar',
-        data: {
-            labels: comparisonData.map(data => data.name),
-            datasets: [
-                {
-                    label: '교통 점수',
-                    data: comparisonData.map(data => data.traffic),
-                    backgroundColor: 'rgba(40, 167, 69, 0.6)',
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: '교육 점수',
-                    data: comparisonData.map(data => data.education),
-                    backgroundColor: 'rgba(23, 162, 184, 0.6)',
-                    borderColor: 'rgba(23, 162, 184, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: '의료 점수',
-                    data: comparisonData.map(data => data.medical),
-                    backgroundColor: 'rgba(220, 53, 69, 0.6)',
-                    borderColor: 'rgba(220, 53, 69, 1)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: '지역별 점수 비교 (막대 차트)'
-                },
-                legend: {
-                    position: 'top'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100
-                }
-            }
-        }
-    });
-
-    // 3. 선형 차트 (평점 추이)
-    const lineCtx = document.getElementById('lineChart').getContext('2d');
-    new Chart(lineCtx, {
-        type: 'line',
-        data: {
-            labels: comparisonData.map(data => data.name),
-            datasets: [
-                {
-                    label: '평균 평점',
-                    data: comparisonData.map(data => data.avgRating),
-                    borderColor: 'rgba(255, 193, 7, 1)',
-                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: 'rgba(255, 193, 7, 1)',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6
-                },
-                {
-                    label: '리뷰 수',
-                    data: comparisonData.map(data => data.reviewCount),
-                    borderColor: 'rgba(108, 117, 125, 1)',
-                    backgroundColor: 'rgba(108, 117, 125, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: 'rgba(108, 117, 125, 1)',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    yAxisID: 'y1'
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: '지역별 평점 및 리뷰 수 비교'
-                },
-                legend: {
-                    position: 'top'
-                }
-            },
-            scales: {
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    beginAtZero: true,
-                    max: 5,
-                    title: {
-                        display: true,
-                        text: '평점 (1-5점)'
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: '리뷰 수'
-                    },
-                    grid: {
-                        drawOnChartArea: false,
-                    },
-                }
-            }
-        }
-    });
-    
-    // 지도 비교 초기화 (Leaflet 사용)
-    let comparisonMap;
-    
-    function initComparisonMap() {
-        if (!comparisonData || comparisonData.length === 0) return;
-        
-        // 지도 중심점 계산 (모든 지역의 평균 위치)
-        const avgLat = comparisonData.reduce((sum, data) => sum + data.region.latitude, 0) / comparisonData.length;
-        const avgLng = comparisonData.reduce((sum, data) => sum + data.region.longitude, 0) / comparisonData.length;
-        
-        comparisonMap = L.map('comparisonMap').setView([avgLat, avgLng], 8);
-        
-        // OpenStreetMap 타일 레이어 추가
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(comparisonMap);
-        
-        const colors = ['#007bff', '#28a745', '#dc3545', '#ffc107', '#6f42c1'];
-        
-        // 각 지역에 마커 추가
-        comparisonData.forEach((data, index) => {
-            const color = colors[index % colors.length];
-            
-            // 커스텀 아이콘 생성
-            const customIcon = L.divIcon({
-                className: 'custom-marker',
-                html: `
-                    <div style="
-                        width: 40px; 
-                        height: 40px; 
-                        background-color: ${color}; 
-                        border: 3px solid white; 
-                        border-radius: 50%; 
-                        display: flex; 
-                        align-items: center; 
-                        justify-content: center; 
-                        color: white; 
-                        font-weight: bold; 
-                        font-size: 12px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                    ">
-                        ${index + 1}
-                    </div>
-                `,
-                iconSize: [40, 40],
-                iconAnchor: [20, 20]
-            });
-            
-            const marker = L.marker([data.region.latitude, data.region.longitude], { icon: customIcon }).addTo(comparisonMap);
-            
-            // 팝업 내용
-            const popupContent = `
-                <div style="padding: 10px; min-width: 200px;">
-                    <h6 style="margin: 0 0 8px 0; color: ${color};">${data.region.name}</h6>
-                    <p style="margin: 0 0 5px 0; font-size: 12px; color: #666;">${data.region.city}</p>
-                    <div style="margin: 8px 0;">
-                        <div style="display: flex; justify-content: space-between; margin: 2px 0;">
-                            <span style="font-size: 11px;">교통:</span>
-                            <span style="font-size: 11px; font-weight: bold;">${data.region.traffic_score}점</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin: 2px 0;">
-                            <span style="font-size: 11px;">교육:</span>
-                            <span style="font-size: 11px; font-weight: bold;">${data.region.education_score}점</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin: 2px 0;">
-                            <span style="font-size: 11px;">의료:</span>
-                            <span style="font-size: 11px; font-weight: bold;">${data.region.medical_score}점</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin: 2px 0;">
-                            <span style="font-size: 11px;">평점:</span>
-                            <span style="font-size: 11px; font-weight: bold;">${data.avg_rating}점</span>
-                        </div>
-                    </div>
-                    <div style="margin-top: 8px; text-align: center;">
-                        <a href="/regions/${data.region.name}/" style="font-size: 11px; color: ${color}; text-decoration: none;">상세보기 →</a>
-                    </div>
-                </div>
-            `;
-            
-            marker.bindPopup(popupContent);
-            
-            // 데이터에 색상 정보 추가 (템플릿에서 사용)
-            data.color = color;
-        });
+// 교통 점수 차트
+const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+new Chart(trafficCtx, {
+  type: 'bar',
+  data: {
+    labels: regions.map(r => r.name),
+    datasets: [{
+      label: '교통 점수',
+      data: regions.map(r => r.traffic_score),
+      backgroundColor: 'rgba(54, 162, 235, 0.8)',
+      borderColor: 'rgba(54, 162, 235, 1)',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 10
+      }
     }
-    
-    // 지도 초기화 호출
-    initComparisonMap();
+  }
+});
+
+// 교육 점수 차트
+const educationCtx = document.getElementById('educationChart').getContext('2d');
+new Chart(educationCtx, {
+  type: 'bar',
+  data: {
+    labels: regions.map(r => r.name),
+    datasets: [{
+      label: '교육 점수',
+      data: regions.map(r => r.education_score),
+      backgroundColor: 'rgba(75, 192, 192, 0.8)',
+      borderColor: 'rgba(75, 192, 192, 1)',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 10
+      }
+    }
+  }
+});
+
+// 의료 점수 차트
+const medicalCtx = document.getElementById('medicalChart').getContext('2d');
+new Chart(medicalCtx, {
+  type: 'bar',
+  data: {
+    labels: regions.map(r => r.name),
+    datasets: [{
+      label: '의료 점수',
+      data: regions.map(r => r.medical_score),
+      backgroundColor: 'rgba(255, 99, 132, 0.8)',
+      borderColor: 'rgba(255, 99, 132, 1)',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 10
+      }
+    }
+  }
 });
 </script>
-{% endif %}
 {% endblock %}

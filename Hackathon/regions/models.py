@@ -35,9 +35,20 @@ class News(models.Model):
     region = models.ForeignKey(Region, on_delete=models.CASCADE, related_name='news')
     published_at = models.DateTimeField(auto_now_add=True)
     is_featured = models.BooleanField(default=False)
+    is_realtime = models.BooleanField(default=False, help_text='실시간 업데이트된 뉴스')
+    source_url = models.URLField(blank=True, help_text='뉴스 원본 URL')
+    category = models.CharField(max_length=50, default='일반', choices=[
+        ('일반', '일반'),
+        ('교통', '교통'),
+        ('교육', '교육'),
+        ('의료', '의료'),
+        ('주거', '주거'),
+        ('정책', '정책'),
+    ])
+    priority = models.IntegerField(default=0, help_text='우선순위 (높을수록 먼저 표시)')
 
     class Meta:
-        ordering = ['-published_at']
+        ordering = ['-priority', '-published_at']
 
     def __str__(self):
         return self.title

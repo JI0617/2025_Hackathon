@@ -1,4 +1,6 @@
 import re
+import random
+from django.db.models import Q
 from regions.models import Region
 from users.models import UserPreference
 
@@ -6,11 +8,20 @@ class ChatbotLogic:
     """챗봇 로직 클래스"""
     
     def __init__(self):
-        self.greetings = ['안녕', 'hello', 'hi', '안녕하세요', '반가워']
-        self.farewells = ['잘가', 'bye', '안녕히가세요', '그만', '종료']
+        self.greetings = ['안녕', 'hello', 'hi', '안녕하세요', '반가워', '하이', '헬로']
+        self.farewells = ['잘가', 'bye', '안녕히가세요', '그만', '종료', '끝', '나갈게']
+        
+        # 키워드 매핑
+        self.traffic_keywords = ['교통', '버스', '지하철', '교통편', '대중교통', '이동', '접근성']
+        self.education_keywords = ['교육', '학교', '대학', '학원', '유치원', '초등학교', '중학교', '고등학교']
+        self.cost_keywords = ['생활비', '비용', '돈', '가격', '월세', '전세', '임대료', '렌트']
+        self.medical_keywords = ['의료', '병원', '의사', '약국', '건강', '치료', '진료']
+        self.comparison_keywords = ['비교', 'vs', '대비', '차이', '어떤게', '어느게']
+        self.weather_keywords = ['날씨', '기후', '온도', '비', '눈', '바람']
         
     def process_message(self, message, user=None):
         """사용자 메시지를 처리하고 응답을 생성"""
+        original_message = message
         message = message.lower().strip()
         
         # 인사말 처리
@@ -21,29 +32,46 @@ class ChatbotLogic:
         if any(farewell in message for farewell in self.farewells):
             return self._handle_farewell()
         
+        # 도움말
+        if any(keyword in message for keyword in ['도움', 'help', '도움말', '무엇', '뭐', '어떤']):
+            return self._handle_help()
+        
+        # 비교 관련 질문
+        if any(keyword in message for keyword in self.comparison_keywords):
+            return self._handle_comparison_request(original_message)
+        
         # 지역 추천 요청 처리
-        if any(keyword in message for keyword in ['추천', '추천해', '추천해줘', '어디', '지역']):
+        if any(keyword in message for keyword in ['추천', '추천해', '추천해줘', '어디', '지역', '살면', '이사']):
             return self._handle_recommendation_request(message, user)
         
         # 지역 정보 요청 처리
-        if any(keyword in message for keyword in ['정보', '알려줘', '어떤', '특징']):
-            return self._handle_region_info_request(message)
+        if any(keyword in message for keyword in ['정보', '알려줘', '어떤', '특징', '소개']):
+            return self._handle_region_info_request(original_message)
         
         # 교통 관련 질문
-        if any(keyword in message for keyword in ['교통', '버스', '지하철', '교통편']):
+        if any(keyword in message for keyword in self.traffic_keywords):
             return self._handle_traffic_question(message)
         
         # 교육 관련 질문
-        if any(keyword in message for keyword in ['교육', '학교', '대학', '학원']):
+        if any(keyword in message for keyword in self.education_keywords):
             return self._handle_education_question(message)
         
         # 생활비 관련 질문
-        if any(keyword in message for keyword in ['생활비', '비용', '돈', '가격', '월세']):
+        if any(keyword in message for keyword in self.cost_keywords):
             return self._handle_cost_question(message)
         
-        # 도움말
-        if any(keyword in message for keyword in ['도움', 'help', '도움말', '무엇']):
-            return self._handle_help()
+        # 의료 관련 질문
+        if any(keyword in message for keyword in self.medical_keywords):
+            return self._handle_medical_question(message)
+        
+        # 날씨 관련 질문
+        if any(keyword in message for keyword in self.weather_keywords):
+            return self._handle_weather_question(message)
+        
+        # 지역명이 포함된 경우
+        region_info = self._extract_region_from_message(original_message)
+        if region_info:
+            return self._handle_specific_region_question(region_info, message)
         
         # 기본 응답
         return self._handle_default_response()
@@ -192,12 +220,132 @@ class ChatbotLogic:
         response += "무엇이든 편하게 물어보세요!"
         return response
     
+    def _extract_region_from_message(self, message):
+        """메시지에서 지역명 추출"""
+        regions = Region.objects.all()
+        for region in regions:
+            if region.name in message or region.city in message:
+                return region
+        return None
+    
+    def _handle_specific_region_question(self, region, message):
+        """특정 지역에 대한 질문 처리"""
+        response = f"📍 {region.name}에 대해 질문해주셨네요!\n\n"
+        
+        # 교통 관련 질문인지 확인
+        if any(keyword in message for keyword in self.traffic_keywords):
+            response += f"🚌 교통: {region.traffic_score}점\n"
+            if region.traffic_score >= 8:
+                response += "교통이 매우 좋은 지역입니다!\n"
+            elif region.traffic_score >= 6:
+                response += "교통이 양호한 지역입니다.\n"
+            else:
+                response += "교통이 다소 불편할 수 있습니다.\n"
+        
+        # 교육 관련 질문인지 확인
+        if any(keyword in message for keyword in self.education_keywords):
+            response += f"🎓 교육: {region.education_score}점\n"
+            if region.education_score >= 8:
+                response += "교육 환경이 매우 좋은 지역입니다!\n"
+            elif region.education_score >= 6:
+                response += "교육 환경이 양호한 지역입니다.\n"
+            else:
+                response += "교육 시설이 다소 부족할 수 있습니다.\n"
+        
+        # 생활비 관련 질문인지 확인
+        if any(keyword in message for keyword in self.cost_keywords):
+            response += f"💰 생활비: {region.cost_level}\n"
+            cost_descriptions = {
+                '매우낮음': '매우 저렴한 생활비',
+                '낮음': '저렴한 생활비',
+                '보통': '보통 수준의 생활비',
+                '높음': '비싼 생활비',
+                '매우높음': '매우 비싼 생활비'
+            }
+            response += f"{cost_descriptions.get(region.cost_level, '정보 없음')}입니다.\n"
+        
+        # 의료 관련 질문인지 확인
+        if any(keyword in message for keyword in self.medical_keywords):
+            response += f"🏥 의료: {region.medical_score}점\n"
+            if region.medical_score >= 8:
+                response += "의료 시설이 매우 잘 갖춰진 지역입니다!\n"
+            elif region.medical_score >= 6:
+                response += "의료 시설이 양호한 지역입니다.\n"
+            else:
+                response += "의료 시설이 다소 부족할 수 있습니다.\n"
+        
+        # 일반적인 정보
+        if not any(keyword in message for keyword in self.traffic_keywords + self.education_keywords + self.cost_keywords + self.medical_keywords):
+            response += f"📊 종합 정보:\n"
+            response += f"🚌 교통: {region.traffic_score}점\n"
+            response += f"🎓 교육: {region.education_score}점\n"
+            response += f"🏥 의료: {region.medical_score}점\n"
+            response += f"💰 생활비: {region.cost_level}\n"
+        
+        if region.description:
+            response += f"\n📝 지역 설명: {region.description}\n"
+        
+        response += f"\n더 자세한 정보는 '{region.name}' 상세 페이지를 확인해보세요!"
+        return response
+    
+    def _handle_comparison_request(self, message):
+        """비교 요청 처리"""
+        # 메시지에서 지역명들 추출
+        regions = Region.objects.all()
+        mentioned_regions = []
+        
+        for region in regions:
+            if region.name in message or region.city in message:
+                mentioned_regions.append(region)
+        
+        if len(mentioned_regions) < 2:
+            return "비교하고 싶은 지역들을 말씀해주세요! 예: '서울과 부산 비교해줘'"
+        
+        # 최대 3개 지역까지만 비교
+        mentioned_regions = mentioned_regions[:3]
+        
+        response = f"📍 {', '.join([r.name for r in mentioned_regions])} 지역 비교입니다:\n\n"
+        
+        for region in mentioned_regions:
+            response += f"🏙️ {region.name}\n"
+            response += f"   🚌 교통: {region.traffic_score}점\n"
+            response += f"   🎓 교육: {region.education_score}점\n"
+            response += f"   🏥 의료: {region.medical_score}점\n"
+            response += f"   💰 생활비: {region.cost_level}\n\n"
+        
+        # 추천 지역
+        best_region = max(mentioned_regions, key=lambda r: r.traffic_score + r.education_score + r.medical_score)
+        response += f"⭐ 종합적으로 {best_region.name}이 가장 추천됩니다!"
+        
+        return response
+    
+    def _handle_medical_question(self, message):
+        """의료 관련 질문 처리"""
+        # 의료가 좋은 지역 추천
+        good_medical_regions = Region.objects.filter(medical_score__gte=8).order_by('-medical_score')[:3]
+        
+        response = "🏥 의료 시설이 좋은 지역들을 알려드릴게요:\n\n"
+        for i, region in enumerate(good_medical_regions, 1):
+            response += f"{i}. {region.name} (의료점수: {region.medical_score}점)\n"
+        
+        response += "\n의료 점수는 병원, 약국, 의료진 등을 종합적으로 평가한 것입니다."
+        return response
+    
+    def _handle_weather_question(self, message):
+        """날씨 관련 질문 처리"""
+        responses = [
+            "죄송합니다. 현재 날씨 정보는 제공하지 않습니다. 지역별 기후 정보는 각 지역 상세 페이지에서 확인하실 수 있어요!",
+            "날씨 정보는 실시간으로 변하므로 정확한 정보를 제공하기 어렵습니다. 대신 지역별 교통, 교육, 생활비 정보를 도와드릴 수 있어요!",
+            "기상청이나 날씨 앱에서 정확한 날씨 정보를 확인하시는 것을 추천드려요. 저는 지역 생활 정보를 도와드릴게요!"
+        ]
+        return random.choice(responses)
+    
     def _handle_default_response(self):
         """기본 응답"""
         responses = [
             "죄송합니다. 잘 이해하지 못했어요. '도움말'을 입력하시면 제가 할 수 있는 일을 알려드릴게요!",
             "무엇을 도와드릴까요? 지역 추천, 정보 조회 등 다양한 서비스를 제공합니다.",
             "지역에 대해 궁금한 것이 있으시면 언제든 말씀해주세요!",
+            "구체적으로 어떤 지역이나 주제에 대해 알고 싶으신가요?",
         ]
-        import random
         return random.choice(responses) 

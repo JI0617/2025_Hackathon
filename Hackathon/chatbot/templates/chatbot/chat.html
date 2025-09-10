@@ -28,7 +28,7 @@
         
         <div class="card-body p-0">
           <!-- 채팅 메시지 영역 -->
-          <div id="chat-messages" class="chat-container" style="height: 400px; overflow-y: auto;">
+          <div id="chat-messages" class="chat-container" style="height: 500px; overflow-y: auto;">
             <!-- 챗봇 환영 메시지 -->
             <div class="message bot-message">
               <div class="message-content">
@@ -38,7 +38,13 @@
                 <div class="message-bubble">
                   <p class="mb-0">
                     안녕하세요! 지역 추천 챗봇입니다. 🏠<br>
-                    어떤 도움이 필요하신가요?
+                    어떤 도움이 필요하신가요?<br><br>
+                    <strong>💡 이런 것들을 물어보세요:</strong><br>
+                    • "추천해줘" - 맞춤 지역 추천<br>
+                    • "교통 좋은 곳" - 교통 편리한 지역<br>
+                    • "생활비 낮은 곳" - 저렴한 지역<br>
+                    • "서울과 부산 비교" - 지역 비교<br>
+                    • "강남구 교통" - 특정 지역 정보
                   </p>
                   <small class="text-muted">지금</small>
                 </div>
@@ -49,9 +55,15 @@
           <!-- 메시지 입력 영역 -->
           <div class="chat-input-container p-3 border-top">
             <form id="chat-form" class="d-flex gap-2">
-              <input type="text" id="message-input" class="form-control" 
-                     placeholder="메시지를 입력하세요..." autocomplete="off">
-              <button type="submit" class="btn btn-primary">
+              <div class="flex-grow-1 position-relative">
+                <input type="text" id="message-input" class="form-control" 
+                       placeholder="메시지를 입력하세요... (예: 추천해줘, 교통 좋은 곳, 서울과 부산 비교)" 
+                       autocomplete="off" maxlength="500">
+                <div class="form-text text-end">
+                  <span id="char-count">0</span>/500
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary" id="send-btn">
                 <i class="bi bi-send"></i>
               </button>
             </form>
@@ -59,17 +71,26 @@
             <!-- 빠른 질문 버튼들 -->
             <div class="mt-3">
               <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-outline-secondary btn-sm quick-question" data-question="추천해줘">
-                  추천해줘
+                <button class="btn btn-outline-primary btn-sm quick-question" data-question="추천해줘">
+                  <i class="bi bi-star"></i> 추천해줘
                 </button>
-                <button class="btn btn-outline-secondary btn-sm quick-question" data-question="교통 좋은 곳">
-                  교통 좋은 곳
+                <button class="btn btn-outline-success btn-sm quick-question" data-question="교통 좋은 곳">
+                  <i class="bi bi-bus-front"></i> 교통 좋은 곳
                 </button>
-                <button class="btn btn-outline-secondary btn-sm quick-question" data-question="생활비 낮은 곳">
-                  생활비 낮은 곳
+                <button class="btn btn-outline-warning btn-sm quick-question" data-question="생활비 낮은 곳">
+                  <i class="bi bi-cash-coin"></i> 생활비 낮은 곳
                 </button>
-                <button class="btn btn-outline-secondary btn-sm quick-question" data-question="도움말">
-                  도움말
+                <button class="btn btn-outline-info btn-sm quick-question" data-question="교육 좋은 곳">
+                  <i class="bi bi-book"></i> 교육 좋은 곳
+                </button>
+                <button class="btn btn-outline-danger btn-sm quick-question" data-question="의료 좋은 곳">
+                  <i class="bi bi-hospital"></i> 의료 좋은 곳
+                </button>
+                <button class="btn btn-outline-secondary btn-sm quick-question" data-question="서울과 부산 비교해줘">
+                  <i class="bi bi-arrow-left-right"></i> 지역 비교
+                </button>
+                <button class="btn btn-outline-dark btn-sm quick-question" data-question="도움말">
+                  <i class="bi bi-question-circle"></i> 도움말
                 </button>
               </div>
             </div>
@@ -140,6 +161,20 @@
 .message-bubble p {
   margin-bottom: 0.25rem;
   white-space: pre-line;
+  line-height: 1.5;
+}
+
+.message-bubble strong {
+  color: #007bff;
+}
+
+.message-bubble ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.message-bubble li {
+  margin: 0.25rem 0;
 }
 
 .typing-indicator {
@@ -186,6 +221,21 @@ document.getElementById('message-input').addEventListener('keypress', function(e
   }
 });
 
+// 문자 수 카운터
+document.getElementById('message-input').addEventListener('input', function(e) {
+  const charCount = e.target.value.length;
+  document.getElementById('char-count').textContent = charCount;
+  
+  // 400자 이상이면 경고 색상
+  if (charCount > 400) {
+    document.getElementById('char-count').className = 'text-danger';
+  } else if (charCount > 300) {
+    document.getElementById('char-count').className = 'text-warning';
+  } else {
+    document.getElementById('char-count').className = 'text-muted';
+  }
+});
+
 // 빠른 질문 버튼 처리
 document.querySelectorAll('.quick-question').forEach(button => {
   button.addEventListener('click', function() {
@@ -197,13 +247,20 @@ document.querySelectorAll('.quick-question').forEach(button => {
 
 function sendMessage() {
   const input = document.getElementById('message-input');
+  const sendBtn = document.getElementById('send-btn');
   const message = input.value.trim();
   
   if (!message) return;
   
+  // 버튼 비활성화
+  sendBtn.disabled = true;
+  sendBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+  
   // 사용자 메시지 표시
   addMessage(message, 'user');
   input.value = '';
+  document.getElementById('char-count').textContent = '0';
+  document.getElementById('char-count').className = 'text-muted';
   
   // 타이핑 표시기 표시
   showTypingIndicator();
@@ -234,6 +291,12 @@ function sendMessage() {
     hideTypingIndicator();
     addMessage('죄송합니다. 서버와의 연결에 문제가 발생했습니다.', 'bot');
     console.error('Error:', error);
+  })
+  .finally(() => {
+    // 버튼 다시 활성화
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = '<i class="bi bi-send"></i>';
+    input.focus();
   });
 }
 
@@ -252,11 +315,14 @@ function addMessage(content, type) {
     '<div class="bot-avatar"><i class="bi bi-robot"></i></div>' :
     '<div class="user-avatar"><i class="bi bi-person"></i></div>';
   
+  // 메시지 내용에 이모지와 하이라이팅 추가
+  const formattedContent = formatMessage(content);
+  
   messageDiv.innerHTML = `
     <div class="message-content">
       ${avatar}
       <div class="message-bubble">
-        <p class="mb-0">${content}</p>
+        <p class="mb-0">${formattedContent}</p>
         <small class="text-muted">${timeString}</small>
       </div>
     </div>
@@ -264,6 +330,51 @@ function addMessage(content, type) {
   
   chatMessages.appendChild(messageDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function formatMessage(content) {
+  // 이모지 매핑
+  const emojiMap = {
+    '교통': '🚌',
+    '교육': '🎓',
+    '의료': '🏥',
+    '생활비': '💰',
+    '추천': '⭐',
+    '비교': '⚖️',
+    '정보': '📊',
+    '점수': '📈',
+    '지역': '📍',
+    '좋은': '👍',
+    '나쁜': '👎',
+    '매우': '🔥',
+    '낮은': '📉',
+    '높은': '📈'
+  };
+  
+  let formatted = content;
+  
+  // 이모지 추가
+  Object.keys(emojiMap).forEach(keyword => {
+    const regex = new RegExp(`(${keyword})`, 'g');
+    formatted = formatted.replace(regex, `${emojiMap[keyword]} $1`);
+  });
+  
+  // 점수 하이라이팅
+  formatted = formatted.replace(/(\d+)점/g, '<span class="badge bg-primary">$1점</span>');
+  
+  // 지역명 하이라이팅
+  formatted = formatted.replace(/([가-힣]+구|[가-힣]+시|[가-힣]+도|[가-힣]+특별시|[가-힣]+광역시)/g, '<strong class="text-primary">$1</strong>');
+  
+  // 생활비 수준 하이라이팅
+  const costLevels = ['매우낮음', '낮음', '보통', '높음', '매우높음'];
+  costLevels.forEach(level => {
+    const color = level === '매우낮음' || level === '낮음' ? 'success' : 
+                  level === '보통' ? 'warning' : 'danger';
+    const regex = new RegExp(`(${level})`, 'g');
+    formatted = formatted.replace(regex, `<span class="badge bg-${color}">$1</span>`);
+  });
+  
+  return formatted;
 }
 
 function showTypingIndicator() {

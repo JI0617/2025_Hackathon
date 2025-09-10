@@ -3,6 +3,10 @@
 
 {% block title %}{{ region.name }} 상세정보{% endblock %}
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="row">
   <div class="col-lg-8">
@@ -13,6 +17,92 @@
         <p class="text-muted mb-0">{{ region.city }}</p>
       </div>
       <div class="card-body">
+        <!-- 점수 시각화 -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h5><i class="bi bi-bar-chart"></i> 지역 점수 분석</h5>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="text-center">
+                  <canvas id="scoreRadarChart" width="300" height="300"></canvas>
+                </div>
+              </div>
+              <div class="col-md-8">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <div class="card border-success">
+                      <div class="card-body text-center">
+                        <i class="bi bi-bus-front text-success fs-1"></i>
+                        <h5 class="mt-2">교통</h5>
+                        <div class="progress mb-2" style="height: 20px;">
+                          <div class="progress-bar bg-success" role="progressbar" 
+                               style="width: {% widthratio region.traffic_score 10 100 %}%">
+                            {{ region.traffic_score }}점
+                          </div>
+                        </div>
+                        <small class="text-muted">대중교통 편의성</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <div class="card border-info">
+                      <div class="card-body text-center">
+                        <i class="bi bi-mortarboard text-info fs-1"></i>
+                        <h5 class="mt-2">교육</h5>
+                        <div class="progress mb-2" style="height: 20px;">
+                          <div class="progress-bar bg-info" role="progressbar" 
+                               style="width: {% widthratio region.education_score 10 100 %}%">
+                            {{ region.education_score }}점
+                          </div>
+                        </div>
+                        <small class="text-muted">교육 환경</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <div class="card border-danger">
+                      <div class="card-body text-center">
+                        <i class="bi bi-hospital text-danger fs-1"></i>
+                        <h5 class="mt-2">의료</h5>
+                        <div class="progress mb-2" style="height: 20px;">
+                          <div class="progress-bar bg-danger" role="progressbar" 
+                               style="width: {% widthratio region.medical_score 10 100 %}%">
+                            {{ region.medical_score }}점
+                          </div>
+                        </div>
+                        <small class="text-muted">의료시설 접근성</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <div class="card border-warning">
+                      <div class="card-body text-center">
+                        <i class="bi bi-cash-coin text-warning fs-1"></i>
+                        <h5 class="mt-2">생활비</h5>
+                        <div class="mb-2">
+                          {% if region.cost_level == '매우낮음' %}
+                            <span class="badge bg-success fs-6">{{ region.cost_level }}</span>
+                          {% elif region.cost_level == '낮음' %}
+                            <span class="badge bg-success fs-6">{{ region.cost_level }}</span>
+                          {% elif region.cost_level == '보통' %}
+                            <span class="badge bg-warning fs-6">{{ region.cost_level }}</span>
+                          {% elif region.cost_level == '높음' %}
+                            <span class="badge bg-danger fs-6">{{ region.cost_level }}</span>
+                          {% else %}
+                            <span class="badge bg-danger fs-6">{{ region.cost_level }}</span>
+                          {% endif %}
+                        </div>
+                        <small class="text-muted">생활비 수준</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 상세 점수 정보 -->
         <div class="row">
           <div class="col-md-6">
             <h5><i class="bi bi-bus-front text-success"></i> 교통 정보</h5>
@@ -22,7 +112,7 @@
                 <span class="fw-bold">{{ region.traffic_score }}점</span>
               </div>
               <div class="progress">
-                <div class="progress-bar bg-success" style="width: {{ region.traffic_score }}%"></div>
+                <div class="progress-bar bg-success" style="width: {% widthratio region.traffic_score 10 100 %}%"></div>
               </div>
             </div>
           </div>
@@ -34,7 +124,7 @@
                 <span class="fw-bold">{{ region.education_score }}점</span>
               </div>
               <div class="progress">
-                <div class="progress-bar bg-info" style="width: {{ region.education_score }}%"></div>
+                <div class="progress-bar bg-info" style="width: {% widthratio region.education_score 10 100 %}%"></div>
               </div>
             </div>
           </div>
@@ -191,7 +281,7 @@
             <i class="bi bi-calculator"></i> 생활비 계산
           </a>
           {% if user.is_authenticated %}
-            <a href="{% url 'comparison' %}" class="btn btn-outline-info">
+            <a href="{% url 'comparison_list' %}" class="btn btn-outline-info">
               <i class="bi bi-bar-chart"></i> 다른 지역과 비교
             </a>
             <a href="{% url 'recommendations' %}" class="btn btn-outline-warning">
@@ -341,9 +431,73 @@ function getDirections() {
     window.open(url, '_blank');
 }
 
-// 페이지 로드 시 지도 초기화
+// 레이더 차트 생성
+function createRadarChart() {
+    const ctx = document.getElementById('scoreRadarChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['교통', '교육', '의료', '생활비'],
+            datasets: [{
+                label: '{{ region.name }}',
+                data: [
+                    {{ region.traffic_score }},
+                    {{ region.education_score }},
+                    {{ region.medical_score }},
+                    {% if region.cost_level == '매우낮음' %}9
+                    {% elif region.cost_level == '낮음' %}7
+                    {% elif region.cost_level == '보통' %}5
+                    {% elif region.cost_level == '높음' %}3
+                    {% else %}1{% endif %}
+                ],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 10,
+                    ticks: {
+                        stepSize: 2
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed.r;
+                            if (label === '생활비') {
+                                const costLevels = ['매우높음', '높음', '보통', '낮음', '매우낮음'];
+                                return `${label}: ${costLevels[Math.round(value) - 1] || '매우높음'}`;
+                            }
+                            return `${label}: ${value}점`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 페이지 로드 시 지도 초기화 및 차트 생성
 document.addEventListener('DOMContentLoaded', function() {
     initMap();
+    createRadarChart();
 });
 </script>
 {% endblock %} 

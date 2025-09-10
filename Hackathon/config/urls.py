@@ -19,6 +19,10 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/v1/', include('regions.api_urls')),  # 지역 API
+    path('api/v1/', include('reviews.api_urls')),  # 리뷰 API
+    path('api/v1/', include('comparisons.api_urls')),  # 비교 API
+    path('api/v1/', include('users.api_urls')),  # 사용자 API
     path('', include('main.urls')),  # 메인 페이지 (루트)
     path('regions/', include('regions.urls')),  # 지역 관련
     path('users/', include('users.urls')),  # 사용자 관련

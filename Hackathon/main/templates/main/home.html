@@ -58,6 +58,32 @@
   </div>
 </div>
 
+<!-- 실시간 뉴스 섹션 -->
+<div class="row mb-5 fade-in-up" style="animation-delay: 0.3s;">
+  <div class="col-12">
+    <div class="card border-warning">
+      <div class="card-header bg-warning bg-opacity-10">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-lightning-charge text-warning"></i> 실시간 뉴스
+          </h5>
+          <small class="text-muted" id="lastUpdated">업데이트 중...</small>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="realtimeNews">
+          <div class="text-center text-muted">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            실시간 뉴스를 불러오는 중...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 시/도별 지역 분포 차트 -->
 <div class="row mb-5 fade-in-up" style="animation-delay: 0.2s;">
   <div class="col-12">
@@ -601,6 +627,101 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 100);
         }
     });
+    
+    // 실시간 업데이트 기능
+    function updateRealtimeData() {
+        // 실시간 통계 업데이트
+        fetch('/api/realtime/stats/')
+            .then(response => response.json())
+            .then(data => {
+                // 통계 카드 업데이트
+                const statsCards = document.querySelectorAll('.stats-card');
+                if (statsCards.length > 0) {
+                    statsCards[0].querySelector('.h3').textContent = data.total_regions;
+                    statsCards[1].querySelector('.h3').textContent = data.total_reviews;
+                    statsCards[2].querySelector('.h3').textContent = data.total_comparisons;
+                    statsCards[3].querySelector('.h3').textContent = data.new_news;
+                }
+                
+                // 마지막 업데이트 시간 표시
+                const lastUpdated = document.getElementById('lastUpdated');
+                if (lastUpdated) {
+                    const updateTime = new Date(data.last_updated);
+                    lastUpdated.textContent = `마지막 업데이트: ${updateTime.toLocaleTimeString()}`;
+                }
+            })
+            .catch(error => console.error('실시간 통계 업데이트 실패:', error));
+        
+        // 실시간 뉴스 업데이트
+        fetch('/api/realtime/news/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.news && data.news.length > 0) {
+                    updateRealtimeNews(data.news);
+                }
+            })
+            .catch(error => console.error('실시간 뉴스 업데이트 실패:', error));
+    }
+    
+    function updateRealtimeNews(news) {
+        const newsContainer = document.getElementById('realtimeNews');
+        if (!newsContainer) return;
+        
+        let newsHTML = '<h6 class="fw-bold mb-3"><i class="bi bi-lightning-charge text-warning"></i> 실시간 뉴스</h6>';
+        
+        news.forEach(item => {
+            const publishTime = new Date(item.published_at);
+            const timeAgo = getTimeAgo(publishTime);
+            
+            newsHTML += `
+                <div class="alert alert-light border-start border-warning border-3 mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">${item.title}</h6>
+                            <p class="small text-muted mb-1">${item.content}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-${getCategoryColor(item.category)}">${item.category}</span>
+                                <small class="text-muted">${timeAgo}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        newsContainer.innerHTML = newsHTML;
+    }
+    
+    function getTimeAgo(date) {
+        const now = new Date();
+        const diff = now - date;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+        
+        if (minutes < 1) return '방금 전';
+        if (minutes < 60) return `${minutes}분 전`;
+        if (hours < 24) return `${hours}시간 전`;
+        return `${days}일 전`;
+    }
+    
+    function getCategoryColor(category) {
+        const colors = {
+            '일반': 'secondary',
+            '교통': 'primary',
+            '교육': 'success',
+            '의료': 'danger',
+            '주거': 'info',
+            '정책': 'warning'
+        };
+        return colors[category] || 'secondary';
+    }
+    
+    // 30초마다 실시간 데이터 업데이트
+    setInterval(updateRealtimeData, 30000);
+    
+    // 페이지 로드 시 즉시 업데이트
+    updateRealtimeData();
 });
 </script>
 {% endblock %} 

@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ review.region.name }} 리뷰 - {{ review.user.username }}{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4 page-title">
+  <h2><i class="bi bi-star"></i> 리뷰 상세</h2>
+  <p class="text-muted">{{ review.region.name }}에 대한 리뷰</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <!-- 리뷰 카드 -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="mb-0">
+              <a href="{% url 'region_detail' review.region.id %}" class="text-decoration-none">
+                {{ review.region.name }}
+              </a>
+            </h5>
+            <small class="text-muted">{{ review.region.city }}</small>
+          </div>
+          <div class="text-end">
+            <div class="rating mb-1">
+              {% for i in "12345" %}
+                {% if forloop.counter <= review.rating %}
+                  <i class="bi bi-star-fill text-warning"></i>
+                {% else %}
+                  <i class="bi bi-star text-muted"></i>
+                {% endif %}
+              {% endfor %}
+              <span class="ms-1 fw-bold">{{ review.rating }}점</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <!-- 작성자 정보 -->
+        <div class="d-flex align-items-center mb-3">
+          <div class="avatar me-3">
+            <i class="bi bi-person-circle fs-1 text-muted"></i>
+          </div>
+          <div>
+            <h6 class="mb-0">{{ review.user.username }}</h6>
+            <small class="text-muted">
+              <i class="bi bi-calendar"></i> {{ review.created_at|date:"Y년 m월 d일 H:i" }}
+              {% if review.updated_at != review.created_at %}
+                • <i class="bi bi-pencil"></i> 수정됨 {{ review.updated_at|date:"Y-m-d H:i" }}
+              {% endif %}
+            </small>
+          </div>
+        </div>
+        
+        <!-- 리뷰 내용 -->
+        <div class="review-content">
+          <p class="mb-0">{{ review.comment|linebreaks }}</p>
+        </div>
+        
+        <!-- 액션 버튼 -->
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <div>
+            <button class="btn btn-outline-primary btn-sm" onclick="likeReview({{ review.id }})">
+              <i class="bi bi-heart"></i> 좋아요
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="shareReview()">
+              <i class="bi bi-share"></i> 공유
+            </button>
+          </div>
+          
+          {% if user == review.user %}
+            <div>
+              <a href="{% url 'edit_review' review.id %}" class="btn btn-outline-warning btn-sm">
+                <i class="bi bi-pencil"></i> 수정
+              </a>
+              <a href="{% url 'delete_review' review.id %}" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-trash"></i> 삭제
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- 관련 리뷰 -->
+    {% if related_reviews %}
+      <div class="card">
+        <div class="card-header">
+          <h6><i class="bi bi-collection"></i> {{ review.region.name }}의 다른 리뷰</h6>
+        </div>
+        <div class="card-body">
+          {% for related_review in related_reviews %}
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+              <div class="flex-grow-1">
+                <div class="d-flex align-items-center mb-1">
+                  <i class="bi bi-person-circle me-2 text-muted"></i>
+                  <span class="fw-bold">{{ related_review.user.username }}</span>
+                  <div class="rating ms-2">
+                    {% for i in "12345" %}
+                      {% if forloop.counter <= related_review.rating %}
+                        <i class="bi bi-star-fill text-warning" style="font-size: 0.8rem;"></i>
+                      {% else %}
+                        <i class="bi bi-star text-muted" style="font-size: 0.8rem;"></i>
+                      {% endif %}
+                    {% endfor %}
+                    <span class="ms-1 small">{{ related_review.rating }}점</span>
+                  </div>
+                </div>
+                <p class="mb-0 text-muted small">{{ related_review.comment|truncatewords:20 }}</p>
+                <small class="text-muted">{{ related_review.created_at|date:"Y-m-d" }}</small>
+              </div>
+              <div>
+                <a href="{% url 'review_detail' related_review.id %}" class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-eye"></i> 보기
+                </a>
+              </div>
+            </div>
+          {% endfor %}
+          
+          <div class="text-center">
+            <a href="{% url 'region_reviews' review.region.id %}" class="btn btn-primary">
+              <i class="bi bi-list"></i> {{ review.region.name }} 리뷰 모두 보기
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function likeReview(reviewId) {
+  // 좋아요 기능 구현
+  alert('좋아요 기능은 준비 중입니다.');
+}
+
+function shareReview() {
+  if (navigator.share) {
+    navigator.share({
+      title: '{{ review.region.name }} 리뷰',
+      text: '{{ review.comment|truncatechars:100 }}',
+      url: window.location.href
+    });
+  } else {
+    // 클립보드에 URL 복사
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      alert('링크가 클립보드에 복사되었습니다.');
+    });
+  }
+}
+</script>
+{% endblock %}
