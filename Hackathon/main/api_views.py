@@ -1,14 +1,16 @@
-from django.shortcuts import render, redirect
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from regions.models import Region
-from .models import UserPreference
+from users.models import UserPreference
+import json
 
-# Create your views here.
-
+@csrf_exempt
 @login_required
-def recommendations(request):
-    """개인화 추천 페이지"""
+@require_http_methods(["GET"])
+def get_recommendations(request):
+    """개인화 추천 API"""
     try:
         # 사용자 선호도 가져오기
         preference = request.user.userpreference
@@ -39,13 +41,32 @@ def recommendations(request):
         scored_regions.sort(key=lambda x: x[1], reverse=True)
         recommended_regions = [region for region, score in scored_regions[:6]]  # 상위 6개 추천
         
-        return render(request, 'users/recommendations.html', {
-            'recommended_regions': recommended_regions
+        # JSON 응답 생성
+        recommendations = []
+        for region in recommended_regions:
+            recommendations.append({
+                'name': region.name,
+                'city': region.city,
+                'traffic_score': region.traffic_score,
+                'education_score': region.education_score,
+                'cost_level': region.cost_level,
+                'population': region.population,
+                'description': region.description,
+                'image_url': region.image_url,
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'recommendations': recommendations
         })
         
     except UserPreference.DoesNotExist:
-        messages.warning(request, '먼저 선호도를 설정해주세요.')
-        return redirect('preferences')
+        return JsonResponse({
+            'success': False,
+            'error': '선호도가 설정되지 않았습니다.'
+        })
     except Exception as e:
-        messages.error(request, f'추천 시스템 오류가 발생했습니다: {str(e)}')
-        return redirect('home') 
+        return JsonResponse({
+            'success': False,
+            'error': f'추천 시스템 오류: {str(e)}'
+        })

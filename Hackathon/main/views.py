@@ -16,44 +16,50 @@ from .forms import UserRegistrationForm, UserPreferenceForm, ReviewForm, Compari
 from .models import SavedSearch
 
 def home(request):
-    """메인 홈페이지 - 검색 및 필터링 기능 포함"""
-    search_form = SearchForm(request.GET)
-    regions = Region.objects.all()
-    
-    if search_form.is_valid():
-        search_query = search_form.cleaned_data.get('search_query')
-        city = search_form.cleaned_data.get('city')
-        min_traffic = search_form.cleaned_data.get('min_traffic')
-        min_education = search_form.cleaned_data.get('min_education')
-        min_medical = search_form.cleaned_data.get('min_medical')
-        cost_level = search_form.cleaned_data.get('cost_level')
-        
-        if search_query:
-            regions = regions.filter(name__icontains=search_query)
-        if city:
-            regions = regions.filter(city=city)
-        if min_traffic is not None:
-            regions = regions.filter(traffic_score__gte=min_traffic)
-        if min_education is not None:
-            regions = regions.filter(education_score__gte=min_education)
-        if min_medical is not None:
-            regions = regions.filter(medical_score__gte=min_medical)
-        if cost_level:
-            regions = regions.filter(cost_level=cost_level)
-    
-    # 페이지네이션
-    paginator = Paginator(regions, 6)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    """메인 홈페이지 - 추천 지역 표시"""
+    # 로그인한 사용자의 경우 개인화 추천, 그렇지 않으면 일반 추천
+    if request.user.is_authenticated:
+        try:
+            preference = request.user.userpreference
+            regions = Region.objects.all()
+            
+            # 선호도 기반 점수 계산
+            scored_regions = []
+            for region in regions:
+                score = 0
+                score += region.traffic_score * preference.traffic_importance
+                score += region.education_score * preference.education_importance
+                score += region.medical_score * preference.medical_importance
+                
+                # 비용 선호도 반영
+                cost_score = 0
+                if preference.preferred_cost_level == region.cost_level:
+                    cost_score = 100
+                elif preference.preferred_cost_level == '낮음' and region.cost_level in ['매우낮음', '낮음']:
+                    cost_score = 80
+                elif preference.preferred_cost_level == '보통' and region.cost_level == '보통':
+                    cost_score = 100
+                elif preference.preferred_cost_level == '높음' and region.cost_level in ['높음', '매우높음']:
+                    cost_score = 80
+                
+                score += cost_score * preference.cost_importance
+                scored_regions.append((region, score))
+            
+            # 점수순 정렬
+            scored_regions.sort(key=lambda x: x[1], reverse=True)
+            recommended_regions = [region for region, score in scored_regions[:12]]
+            
+        except UserPreference.DoesNotExist:
+            recommended_regions = Region.objects.all()[:12]
+    else:
+        recommended_regions = Region.objects.all()[:12]
     
     # 통계 정보
     total_regions_count = Region.objects.count()
     total_reviews_count = Review.objects.count()
     
     context = {
-        'regions': page_obj,
-        'search_form': search_form,
-        'total_regions': regions.count(),
+        'regions': recommended_regions,
         'total_regions_count': total_regions_count,
         'total_reviews_count': total_reviews_count,
     }
@@ -148,51 +154,12 @@ def preferences(request):
         if form.is_valid():
             form.save()
             messages.success(request, '선호도가 저장되었습니다!')
-            return redirect('recommendations')
+            return redirect('home')
     else:
         form = UserPreferenceForm(instance=preference)
     
     return render(request, 'users/preferences.html', {'form': form})
 
-@login_required
-def recommendations(request):
-    """개인화된 추천"""
-    try:
-        preference = request.user.userpreference
-        regions = Region.objects.all()
-        
-        # 선호도 기반 점수 계산
-        scored_regions = []
-        for region in regions:
-            score = 0
-            score += region.traffic_score * preference.traffic_importance
-            score += region.education_score * preference.education_importance
-            
-            # 비용 선호도 반영
-            cost_score = 0
-            if preference.preferred_cost_level == region.cost_level:
-                cost_score = 100
-            elif preference.preferred_cost_level == '낮음' and region.cost_level in ['매우낮음', '낮음']:
-                cost_score = 80
-            elif preference.preferred_cost_level == '보통' and region.cost_level == '보통':
-                cost_score = 100
-            elif preference.preferred_cost_level == '높음' and region.cost_level in ['높음', '매우높음']:
-                cost_score = 80
-            
-            score += cost_score * preference.cost_importance
-            scored_regions.append((region, score))
-        
-        # 점수순 정렬
-        scored_regions.sort(key=lambda x: x[1], reverse=True)
-        recommended_regions = [region for region, score in scored_regions[:5]]
-        
-    except UserPreference.DoesNotExist:
-        recommended_regions = Region.objects.all()[:5]
-        messages.warning(request, '선호도를 설정해주세요!')
-    
-    return render(request, 'users/recommendations.html', {
-        'recommended_regions': recommended_regions
-    })
 
 @login_required
 def comparison(request):
@@ -243,8 +210,8 @@ def comparison_detail(request, pk):
         'comparison_data': comparison_data
     })
 
-def news(request):
-    """뉴스 및 업데이트"""
+def policy(request):
+    """정책 및 업데이트"""
     featured_news = News.objects.filter(is_featured=True).order_by('-published_at')[:3]
     all_news = News.objects.all().order_by('-published_at')
     
@@ -258,44 +225,6 @@ def news(request):
         'news_list': page_obj
     })
 
-def calculator(request):
-    """생활비 계산기"""
-    if request.method == 'POST':
-        region_name = request.POST.get('region')
-        monthly_income = int(request.POST.get('monthly_income', 0))
-        family_size = int(request.POST.get('family_size', 1))
-        
-        try:
-            region = Region.objects.get(name=region_name)
-            
-            # 간단한 생활비 계산 (예시)
-            base_cost = {
-                '매우낮음': 800000,
-                '낮음': 1000000,
-                '보통': 1200000,
-                '높음': 1500000,
-                '매우높음': 2000000,
-            }
-            
-            monthly_cost = base_cost.get(region.cost_level, 1200000) * family_size
-            remaining = monthly_income - monthly_cost
-            
-            calculation_result = {
-                'region': region,
-                'monthly_income': monthly_income,
-                'family_size': family_size,
-                'monthly_cost': monthly_cost,
-                'remaining': remaining,
-                'cost_level': region.cost_level,
-            }
-            
-            return render(request, 'calculator/calculator.html', {'result': calculation_result})
-            
-        except Region.DoesNotExist:
-            messages.error(request, '지역을 찾을 수 없습니다.')
-    
-    regions = Region.objects.all()
-    return render(request, 'calculator/calculator.html', {'regions': regions})
 
 def api_regions(request):
     """API: 지역 목록 (AJAX용)"""

@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'users',
     'reviews',
     'comparisons',
-    'calculator',
     'chatbot',
 ]
 

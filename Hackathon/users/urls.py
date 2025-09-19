@@ -1,5 +1,6 @@
 from django.urls import path
 from main import views
+from . import views as user_views
 
 urlpatterns = [
     # 인증 관련
@@ -9,5 +10,5 @@ urlpatterns = [
     
     # 사용자 기능
     path('preferences/', views.preferences, name='preferences'),
-    path('recommendations/', views.recommendations, name='recommendations'),
+    path('recommendations/', user_views.recommendations, name='recommendations'),
 ] 

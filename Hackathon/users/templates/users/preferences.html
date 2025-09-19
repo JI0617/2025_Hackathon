@@ -16,7 +16,7 @@
           {% csrf_token %}
           
           <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-3">
               <div class="mb-4">
                 <label for="{{ form.traffic_importance.id_for_label }}" class="form-label">
                   <i class="bi bi-bus-front text-success"></i> 교통 중요도
@@ -26,7 +26,7 @@
               </div>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3">
               <div class="mb-4">
                 <label for="{{ form.education_importance.id_for_label }}" class="form-label">
                   <i class="bi bi-mortarboard text-info"></i> 교육 중요도
@@ -36,7 +36,17 @@
               </div>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3">
+              <div class="mb-4">
+                <label for="{{ form.medical_importance.id_for_label }}" class="form-label">
+                  <i class="bi bi-hospital text-danger"></i> 의료 중요도
+                </label>
+                {{ form.medical_importance }}
+                <div class="form-text">의료 시설의 중요도를 선택하세요</div>
+              </div>
+            </div>
+            
+            <div class="col-md-3">
               <div class="mb-4">
                 <label for="{{ form.cost_importance.id_for_label }}" class="form-label">
                   <i class="bi bi-currency-dollar text-warning"></i> 비용 중요도
@@ -47,19 +57,43 @@
             </div>
           </div>
           
-          <div class="mb-4">
-            <label for="{{ form.preferred_cost_level.id_for_label }}" class="form-label">
-              <i class="bi bi-piggy-bank text-primary"></i> 선호하는 생활비 수준
-            </label>
-            {{ form.preferred_cost_level }}
-            <div class="form-text">어떤 수준의 생활비를 선호하시나요?</div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="mb-4">
+                <label for="{{ form.preferred_cost_level.id_for_label }}" class="form-label">
+                  <i class="bi bi-piggy-bank text-primary"></i> 선호하는 생활비 수준
+                </label>
+                {{ form.preferred_cost_level }}
+                <div class="form-text">어떤 수준의 생활비를 선호하시나요?</div>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="mb-4">
+                <label for="{{ form.monthly_rent_budget.id_for_label }}" class="form-label">
+                  <i class="bi bi-house text-success"></i> 월세 예산
+                </label>
+                {{ form.monthly_rent_budget }}
+                <div class="form-text">월세 예산을 만원 단위로 입력하세요</div>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="mb-4">
+                <label for="{{ form.deposit_budget.id_for_label }}" class="form-label">
+                  <i class="bi bi-safe text-info"></i> 보증금 예산
+                </label>
+                {{ form.deposit_budget }}
+                <div class="form-text">보증금 예산을 만원 단위로 입력하세요</div>
+              </div>
+            </div>
           </div>
           
           <div class="d-grid gap-2">
             <button type="submit" class="btn btn-primary">
               <i class="bi bi-save"></i> 선호도 저장
             </button>
-            <a href="{% url 'recommendations' %}" class="btn btn-outline-warning">
+            <a href="{% url 'home' %}#recommendation" class="btn btn-outline-warning" onclick="openRecommendationModal()">
               <i class="bi bi-star"></i> 추천받기
             </a>
           </div>

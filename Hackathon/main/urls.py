@@ -25,6 +25,7 @@ urlpatterns = [
     path('delete-search/<int:search_id>/', views.delete_saved_search, name='delete_saved_search'),
     
     # 정책 및 마이페이지
+    path('policy/', views.policy, name='policy'),
     path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
     path('terms-of-service/', views.terms_of_service, name='terms_of_service'),
     path('my-page/', views.my_page, name='my_page'),

@@ -284,7 +284,7 @@
             <a href="{% url 'comparison_list' %}" class="btn btn-outline-info">
               <i class="bi bi-bar-chart"></i> 다른 지역과 비교
             </a>
-            <a href="{% url 'recommendations' %}" class="btn btn-outline-warning">
+            <a href="{% url 'home' %}#recommendation" class="btn btn-outline-warning" onclick="openRecommendationModal()">
               <i class="bi bi-star"></i> 추천받기
             </a>
           {% else %}

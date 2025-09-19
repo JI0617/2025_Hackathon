@@ -33,3 +33,4 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(fields=('user', 'name'), name='unique_user_search_name'),
         ),
     ]
+

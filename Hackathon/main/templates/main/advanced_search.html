@@ -266,8 +266,36 @@
                         {% if region.image_url %}
                         <img src="{{ region.image_url }}" class="card-img-top" alt="{{ region.name }}" style="height: 200px; object-fit: cover;">
                         {% else %}
-                        <div class="card-img-top bg-gradient d-flex align-items-center justify-content-center" style="height: 200px; background: linear-gradient(135deg, #667eea, #764ba2);">
-                            <i class="bi bi-geo-alt-fill text-white" style="font-size: 3rem;"></i>
+                        <div class="card-img-top bg-gradient d-flex align-items-center justify-content-center position-relative" style="height: 200px; background: linear-gradient(135deg, #667eea, #764ba2); overflow: hidden;">
+                            <!-- 지역별 특화 배경 이미지 -->
+                            {% if '서울' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #ff6b6b, #ffa726); opacity: 0.8;"></div>
+                            <i class="bi bi-building text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '부산' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #4fc3f7, #29b6f6); opacity: 0.8;"></div>
+                            <i class="bi bi-water text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '제주' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #66bb6a, #4caf50); opacity: 0.8;"></div>
+                            <i class="bi bi-tree text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '강원' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #81c784, #66bb6a); opacity: 0.8;"></div>
+                            <i class="bi bi-mountain text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '경기' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #ffb74d, #ff9800); opacity: 0.8;"></div>
+                            <i class="bi bi-house text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '충청' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #ba68c8, #ab47bc); opacity: 0.8;"></div>
+                            <i class="bi bi-flower1 text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '전라' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #ff8a65, #ff7043); opacity: 0.8;"></div>
+                            <i class="bi bi-sun text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '경상' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #a5d6a7, #81c784); opacity: 0.8;"></div>
+                            <i class="bi bi-geo-alt text-white position-relative" style="font-size: 3rem;"></i>
+                            {% else %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #667eea, #764ba2); opacity: 0.8;"></div>
+                            <i class="bi bi-geo-alt-fill text-white position-relative" style="font-size: 3rem;"></i>
+                            {% endif %}
                         </div>
                         {% endif %}
                         <div class="card-body">

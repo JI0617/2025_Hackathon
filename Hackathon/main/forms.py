@@ -2,26 +2,54 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from regions.models import Region
-from users.models import UserPreference
+from users.models import UserPreference, UserProfile
 from reviews.models import Review
 from comparisons.models import Comparison
 
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
+    age = forms.IntegerField(
+        min_value=1, max_value=120,
+        widget=forms.NumberInput(attrs={'placeholder': '나이를 입력하세요'})
+    )
+    gender = forms.ChoiceField(
+        choices=UserProfile.GENDER_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    job = forms.ChoiceField(
+        choices=UserProfile.JOB_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
     
     class Meta:
         model = User
-        fields = ('username', 'email', 'password1', 'password2')
+        fields = ('username', 'email', 'password1', 'password2', 'age', 'gender', 'job')
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if commit:
+            user.save()
+            # UserProfile 생성
+            UserProfile.objects.create(
+                user=user,
+                age=self.cleaned_data['age'],
+                gender=self.cleaned_data['gender'],
+                job=self.cleaned_data['job']
+            )
+        return user
 
 class UserPreferenceForm(forms.ModelForm):
     class Meta:
         model = UserPreference
-        fields = ['traffic_importance', 'education_importance', 'cost_importance', 'preferred_cost_level']
+        fields = ['traffic_importance', 'education_importance', 'medical_importance', 'cost_importance', 'preferred_cost_level', 'monthly_rent_budget', 'deposit_budget']
         widgets = {
             'traffic_importance': forms.Select(choices=[(i, i) for i in range(1, 6)]),
             'education_importance': forms.Select(choices=[(i, i) for i in range(1, 6)]),
+            'medical_importance': forms.Select(choices=[(i, i) for i in range(1, 6)]),
             'cost_importance': forms.Select(choices=[(i, i) for i in range(1, 6)]),
             'preferred_cost_level': forms.Select(choices=Region.cost_level.field.choices),
+            'monthly_rent_budget': forms.NumberInput(attrs={'placeholder': '월세 예산 (만원)', 'min': '0'}),
+            'deposit_budget': forms.NumberInput(attrs={'placeholder': '보증금 예산 (만원)', 'min': '0'}),
         }
 
 class ReviewForm(forms.ModelForm):
