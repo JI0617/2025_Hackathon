@@ -29,7 +29,7 @@ def generate_summary(row):
 - 종합부담등급: {row[cols[10]]}
 - 월세등급: {row[cols[11]]}
 
-이 지역의 특성을 1-2문장으로 요약해주세요."""
+이 지역의 특성을 2문장으로 요약해주세요."""
 
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
