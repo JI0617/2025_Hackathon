@@ -127,34 +127,39 @@ def format_regions(regions: list) -> str:
         )
     return "\n---\n".join(info_strs)
 
-def make_final_prompt(input_dict: dict) -> str:
-    # LLM이 상세 정보를 채울 수 있도록 원본 region 정보를 전달
-    regions = input_dict['regions']
-    regions_block = format_regions(regions)
-
-    # 상세 정보를 포함하는 프롬프트 구성
-    detailed_regions_info = []
-    for r in regions:
-        detailed_regions_info.append(
-            f"지역명: {r.get('region_name')}\n"
-            f"의료 등급: {r.get('medical_grade')}\n"
-            f"교육 인프라 등급: {r.get('education_grade')}\n"
-            f"월세 등급: {r.get('rent_grade')}\n"
-            f"평균 보증금: {r.get('deposit')}\n"
-            f"평균 월세금: {r.get('monthly_rent')}\n"
-            f"요약: {r.get('text')}"
-        )
-    
-    context_block = "\n---\n".join(detailed_regions_info)
-
-    return f'''
+recommend_chain = (
+    {
+        "query": RunnablePassthrough(),
+        "vector": RunnableLambda(lambda q: embedder.embed_query(q))
+    }
+    | RunnableMap({
+        "query": lambda x: x["query"],
+        "regions": search_similar_regions
+    })
+    | RunnableLambda(
+        lambda x: {
+            "query": x["query"],
+            "context_block": "\n---\n".join([
+                f"지역명: {r.get('region_name')}\n"
+                f"의료 등급: {r.get('medical_grade')}\n"
+                f"교육 인프라 등급: {r.get('education_grade')}\n"
+                f"월세 등급: {r.get('rent_grade')}\n"
+                f"평균 보증금: {r.get('deposit')}\n"
+                f"평균 월세금: {r.get('monthly_rent')}\n"
+                f"요약: {r.get('text')}"
+                for r in x["regions"]
+            ])
+        }
+    )
+    | RunnableLambda(
+        lambda x: f'''
     당신은 대한민국 지역 추천 전문가입니다.
     
     [사용자 질문]
-    {input_dict['query']}
+    {x['query']}
 
     [검색된 지역 정보]
-    {context_block}
+    {x['context_block']}
 
     [지시사항]
     1. 위 '검색된 지역 정보'만을 참고하여 '사용자 질문'에 가장 적합한 **상위 3곳의 지역**을 추천해 주세요.
@@ -199,17 +204,7 @@ def make_final_prompt(input_dict: dict) -> str:
     - 평균 보증금: [보증금]만원
     - 평균 월세금: [월세금]만원
     '''
-
-recommend_chain = (
-    {
-        "query": RunnablePassthrough(),
-        "vector": RunnableLambda(lambda q: embedder.embed_query(q))
-    }
-    | RunnableMap({
-        "query": lambda x: x["query"],
-        "regions": search_similar_regions
-    })
-    | RunnableLambda(make_final_prompt)
+    )
     | llm
     | parser
 )
