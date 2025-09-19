@@ -88,14 +88,14 @@ def build_metadata_filter(parsed: dict) -> dict:
     
     for key, pinecone_key in [("medical_grade", "medical_grade"), ("education_grade", "education_grade"), ("rent_grade", "rent_grade")]:
         if parsed.get(key) and parsed[key] in ["상", "중", "하"]:
-            filter_dict["$and"].append({{pinecone_key: {"$eq": parsed[key]}}})
+            filter_dict["$and"].append({pinecone_key: {"$eq": parsed[key]}})
 
     for key, pinecone_key in [("deposit", "deposit"), ("monthly_rent", "monthly_rent")]:
         if isinstance(parsed.get(key), dict):
             op = parsed[key].get("op")
             val = parsed[key].get("value")
             if op in ["lte", "gte", "eq"] and isinstance(val, (int, float)):
-                filter_dict["$and"].append({{pinecone_key: {f"${op}": val}}})
+                filter_dict["$and"].append({pinecone_key: {f"${op}": val}})
 
     return filter_dict if filter_dict["$and"] else {}
 
@@ -127,39 +127,31 @@ def format_regions(regions: list) -> str:
         )
     return "\n---\n".join(info_strs)
 
-recommend_chain = (
-    {
-        "query": RunnablePassthrough(),
-        "vector": RunnableLambda(lambda q: embedder.embed_query(q))
-    }
-    | RunnableMap({
-        "query": lambda x: x["query"],
-        "regions": search_similar_regions
-    })
-    | RunnableLambda(
-        lambda x: {
-            "query": x["query"],
-            "context_block": "\n---\n".join([
-                f"지역명: {r.get('region_name')}\n"
-                f"의료 등급: {r.get('medical_grade')}\n"
-                f"교육 인프라 등급: {r.get('education_grade')}\n"
-                f"월세 등급: {r.get('rent_grade')}\n"
-                f"평균 보증금: {r.get('deposit')}\n"
-                f"평균 월세금: {r.get('monthly_rent')}\n"
-                f"요약: {r.get('text')}"
-                for r in x["regions"]
-            ])
-        }
-    )
-    | RunnableLambda(
-        lambda x: f'''
+def format_context_for_prompt(input_dict: dict):
+    """검색된 지역 목록을 LLM 프롬프트에 넣기 좋은 형태의 단일 문자열로 변환합니다."""
+    context_block = "\n---\n".join([
+        f"지역명: {r.get('region_name')}\n"
+        f"의료 등급: {r.get('medical_grade')}\n"
+        f"교육 인프라 등급: {r.get('education_grade')}\n"
+        f"월세 등급: {r.get('rent_grade')}\n"
+        f"평균 보증금: {r.get('deposit')}\n"
+        f"평균 월세금: {r.get('monthly_rent')}\n"
+        f"요약: {r.get('text')}"
+        for r in input_dict["regions"]
+    ])
+    # 다음 단계에서 query와 context_block을 모두 사용할 수 있도록 딕셔너리로 반환
+    return {"query": input_dict["query"], "context_block": context_block}
+
+def create_final_prompt(input_dict: dict) -> str:
+    """최종 LLM 프롬프트를 생성합니다."""
+    return f'''
     당신은 대한민국 지역 추천 전문가입니다.
     
     [사용자 질문]
-    {x['query']}
+    {input_dict['query']}
 
     [검색된 지역 정보]
-    {x['context_block']}
+    {input_dict['context_block']}
 
     [지시사항]
     1. 위 '검색된 지역 정보'만을 참고하여 '사용자 질문'에 가장 적합한 **상위 3곳의 지역**을 추천해 주세요.
@@ -204,7 +196,18 @@ recommend_chain = (
     - 평균 보증금: [보증금]만원
     - 평균 월세금: [월세금]만원
     '''
-    )
+
+recommend_chain = (
+    {
+        "query": RunnablePassthrough(),
+        "vector": RunnableLambda(lambda q: embedder.embed_query(q))
+    }
+    | RunnableMap({
+        "query": lambda x: x["query"],
+        "regions": search_similar_regions
+    })
+    | RunnableLambda(format_context_for_prompt)
+    | RunnableLambda(create_final_prompt)
     | llm
     | parser
 )
