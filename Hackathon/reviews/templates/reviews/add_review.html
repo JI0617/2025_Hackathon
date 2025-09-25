@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ region.name }} 리뷰 작성{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow">
+      <div class="card-header">
+        <h3><i class="bi bi-chat-dots"></i> {{ region.name }} 리뷰 작성</h3>
+      </div>
+      <div class="card-body">
+        <!-- 지역 정보 요약 -->
+        <div class="alert alert-info mb-4">
+          <h6><i class="bi bi-geo-alt"></i> {{ region.name }} 정보</h6>
+          <div class="row">
+            <div class="col-md-4">
+              <small class="text-muted">교통 점수</small><br>
+              <strong class="text-success">{{ region.traffic_score }}점</strong>
+            </div>
+            <div class="col-md-4">
+              <small class="text-muted">교육 점수</small><br>
+              <strong class="text-info">{{ region.education_score }}점</strong>
+            </div>
+            <div class="col-md-4">
+              <small class="text-muted">생활비 수준</small><br>
+              <strong class="text-warning">{{ region.cost_level }}</strong>
+            </div>
+          </div>
+        </div>
+        
+        <form method="post">
+          {% csrf_token %}
+          
+          <div class="mb-4">
+            <label for="{{ form.rating.id_for_label }}" class="form-label">
+              <i class="bi bi-star"></i> 평점
+            </label>
+            {{ form.rating }}
+            <div class="form-text">이 지역에 대한 전반적인 만족도를 평가해주세요</div>
+          </div>
+          
+          <div class="mb-4">
+            <label for="{{ form.comment.id_for_label }}" class="form-label">
+              <i class="bi bi-chat-text"></i> 리뷰 내용
+            </label>
+            {{ form.comment }}
+            <div class="form-text">이 지역에 대한 경험과 의견을 자유롭게 작성해주세요</div>
+          </div>
+          
+          {% if form.errors %}
+            <div class="alert alert-danger">
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                  <p class="mb-0">{{ error }}</p>
+                {% endfor %}
+              {% endfor %}
+            </div>
+          {% endif %}
+          
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-send"></i> 리뷰 등록
+            </button>
+            <a href="{% url 'region_detail' region.name %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> 돌아가기
+            </a>
+          </div>
+        </form>
+        
+        <hr>
+        
+        <div class="alert alert-warning">
+          <h6><i class="bi bi-lightbulb"></i> 리뷰 작성 팁</h6>
+          <ul class="mb-0">
+            <li>교통 편의성에 대한 경험을 공유해주세요</li>
+            <li>교육 환경이나 학교에 대한 의견을 남겨주세요</li>
+            <li>생활비나 물가에 대한 정보를 제공해주세요</li>
+            <li>주변 환경이나 편의시설에 대한 평가를 해주세요</li>
+            <li>다른 사용자에게 도움이 될 수 있는 정보를 포함해주세요</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

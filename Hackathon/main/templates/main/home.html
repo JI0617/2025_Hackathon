@@ -1,0 +1,902 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}지역 추천 홈{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<!-- 지역 추천 섹션 (맨 상단으로 이동) -->
+<div id="recommendation" class="mb-5 fade-in-up">
+  <div class="text-center mb-4">
+    <h2><i class="bi bi-star-fill text-warning"></i> 지역 추천</h2>
+    <p class="text-muted">당신에게 맞는 최적의 지역을 찾아보세요</p>
+    {% if user.is_authenticated %}
+      <button class="btn btn-warning btn-lg" onclick="showRecommendations()">
+        <i class="bi bi-star"></i> 추천받기
+      </button>
+    {% else %}
+      <button class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#recommendationModal">
+        <i class="bi bi-star"></i> 추천받기
+      </button>
+    {% endif %}
+  </div>
+  
+  <!-- 추천 결과 표시 영역 -->
+  <div id="recommendationResults" class="mt-4" style="display: none;">
+    <div class="text-center mb-3">
+      <h4><i class="bi bi-star-fill text-warning"></i> 당신을 위한 맞춤 추천</h4>
+    </div>
+    <div id="recommendationCards" class="row">
+      <!-- 추천 결과가 여기에 동적으로 표시됩니다 -->
+    </div>
+  </div>
+</div>
+
+<!-- 추천 모달 -->
+<div class="modal fade" id="recommendationModal" tabindex="-1" aria-labelledby="recommendationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="recommendationModalLabel">
+          <i class="bi bi-star-fill text-warning"></i> 맞춤 지역 추천
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="position: relative; z-index: 1055;">
+        <form id="recommendationForm" style="pointer-events: auto;">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="trafficWeight" class="form-label">교통 편의성 중요도</label>
+              <select class="form-select" id="trafficWeight" name="traffic_weight" style="pointer-events: auto;">
+                <option value="1">매우 중요</option>
+                <option value="2">중요</option>
+                <option value="3" selected>보통</option>
+                <option value="4">덜 중요</option>
+                <option value="5">전혀 중요하지 않음</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="educationWeight" class="form-label">교육 환경 중요도</label>
+              <select class="form-select" id="educationWeight" name="education_weight" style="pointer-events: auto;">
+                <option value="1">매우 중요</option>
+                <option value="2">중요</option>
+                <option value="3" selected>보통</option>
+                <option value="4">덜 중요</option>
+                <option value="5">전혀 중요하지 않음</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="medicalWeight" class="form-label">의료 서비스 중요도</label>
+              <select class="form-select" id="medicalWeight" name="medical_weight" style="pointer-events: auto;">
+                <option value="1">매우 중요</option>
+                <option value="2">중요</option>
+                <option value="3" selected>보통</option>
+                <option value="4">덜 중요</option>
+                <option value="5">전혀 중요하지 않음</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="costPreference" class="form-label">생활비 선호도</label>
+              <select class="form-select" id="costPreference" name="cost_preference" style="pointer-events: auto;">
+                <option value="low">낮은 생활비</option>
+                <option value="medium" selected>보통 생활비</option>
+                <option value="high">높은 생활비</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="cityPreference" class="form-label">선호 지역</label>
+              <select class="form-select" id="cityPreference" name="city_preference" style="pointer-events: auto;">
+                <option value="">전체</option>
+                <option value="서울특별시">서울특별시</option>
+                <option value="경기도">경기도</option>
+                <option value="인천광역시">인천광역시</option>
+                <option value="부산광역시">부산광역시</option>
+                <option value="대구광역시">대구광역시</option>
+                <option value="광주광역시">광주광역시</option>
+                <option value="대전광역시">대전광역시</option>
+                <option value="울산광역시">울산광역시</option>
+                <option value="세종특별자치시">세종특별자치시</option>
+                <option value="강원특별자치도">강원특별자치도</option>
+                <option value="충청북도">충청북도</option>
+                <option value="충청남도">충청남도</option>
+                <option value="전북특별자치도">전북특별자치도</option>
+                <option value="전라남도">전라남도</option>
+                <option value="경상북도">경상북도</option>
+                <option value="경상남도">경상남도</option>
+                <option value="제주특별자치도">제주특별자치도</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="minScore" class="form-label">최소 점수</label>
+              <select class="form-select" id="minScore" name="min_score" style="pointer-events: auto;">
+                <option value="0">0점 이상</option>
+                <option value="50" selected>50점 이상</option>
+                <option value="60">60점 이상</option>
+                <option value="70">70점 이상</option>
+                <option value="80">80점 이상</option>
+              </select>
+            </div>
+          </div>
+        </form>
+        
+        <!-- 추천 결과 영역 -->
+        <div id="recommendationResults" class="mt-4" style="display: none;">
+          <h6 class="text-primary mb-3">
+            <i class="bi bi-star-fill"></i> 추천 결과
+          </h6>
+          <div id="recommendedRegions" class="row">
+            <!-- 추천 결과가 여기에 표시됩니다 -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="pointer-events: auto;">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="pointer-events: auto;">닫기</button>
+        <button type="button" class="btn btn-warning" onclick="getRecommendations()" style="pointer-events: auto;">
+          <i class="bi bi-search"></i> 추천받기
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 테스트 추천 결과 영역 -->
+<div id="testRecommendationResults" class="mb-5" style="display: none;">
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-star-fill text-success"></i> 테스트 추천 결과</h5>
+    </div>
+    <div class="card-body">
+      <div id="testRecommendedRegions" class="row">
+        <!-- 테스트 추천 결과가 여기에 표시됩니다 -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 통계 대시보드 -->
+<div class="row mb-5 fade-in-up" style="animation-delay: 0.1s;">
+  <div class="col-md-3 mb-3">
+    <div class="card text-center h-100 border-0 shadow-sm stats-card">
+      <div class="card-body">
+        <div class="display-6 text-primary mb-2 pulse">
+          <i class="bi bi-geo-alt-fill"></i>
+        </div>
+        <h4 class="fw-bold text-dark">{{ total_regions_count }}</h4>
+        <p class="text-muted mb-0">등록된 지역</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-center h-100 border-0 shadow-sm stats-card">
+      <div class="card-body">
+        <div class="display-6 text-success mb-2 pulse">
+          <i class="bi bi-star-fill"></i>
+        </div>
+        <h4 class="fw-bold text-dark">{{ regions|length }}</h4>
+        <p class="text-muted mb-0">추천 지역</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-center h-100 border-0 shadow-sm stats-card">
+      <div class="card-body">
+        <div class="display-6 text-info mb-2 pulse">
+          <i class="bi bi-people-fill"></i>
+        </div>
+        <h4 class="fw-bold text-dark">{% if user.is_authenticated %}1{% else %}0{% endif %}</h4>
+        <p class="text-muted mb-0">활성 사용자</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-center h-100 border-0 shadow-sm stats-card">
+      <div class="card-body">
+        <div class="display-6 text-warning mb-2 pulse">
+          <i class="bi bi-chat-dots-fill"></i>
+        </div>
+        <h4 class="fw-bold text-dark">{{ total_reviews_count }}</h4>
+        <p class="text-muted mb-0">총 리뷰</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 정책 섹션 -->
+<div class="row mb-5 fade-in-up" style="animation-delay: 0.3s;">
+  <div class="col-12">
+    <div class="card border-primary">
+      <div class="card-header bg-primary bg-opacity-10">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-file-earmark-text text-primary"></i> 정책
+          </h5>
+          <small class="text-muted" id="lastUpdated">업데이트 중...</small>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="realtimeNews">
+          <div class="text-center text-muted">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            정책 정보를 불러오는 중...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 시/도별 인구 분포 차트 -->
+<div class="row mb-5 fade-in-up" style="animation-delay: 0.2s;">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-people-fill"></i> 시/도별 인구 분포</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8">
+            <canvas id="populationDistributionChart" width="400" height="200"></canvas>
+          </div>
+          <div class="col-md-4">
+            <h6 class="text-muted mb-3">상위 5개 시/도 (인구)</h6>
+            <div class="list-group list-group-flush">
+              <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span><i class="bi bi-1-circle text-primary me-2"></i>경기도</span>
+                <span class="badge bg-primary rounded-pill">1,350만명</span>
+              </div>
+              <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span><i class="bi bi-2-circle text-success me-2"></i>서울특별시</span>
+                <span class="badge bg-success rounded-pill">950만명</span>
+              </div>
+              <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span><i class="bi bi-3-circle text-info me-2"></i>경상남도</span>
+                <span class="badge bg-info rounded-pill">330만명</span>
+              </div>
+              <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span><i class="bi bi-4-circle text-warning me-2"></i>경상북도</span>
+                <span class="badge bg-warning rounded-pill">260만명</span>
+              </div>
+              <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span><i class="bi bi-5-circle text-danger me-2"></i>전라남도</span>
+                <span class="badge bg-danger rounded-pill">180만명</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 지역 목록 -->
+<div class="row">
+  {% for region in regions %}
+    <div class="col-md-6 col-lg-4 mb-4 fade-in-up" style="animation-delay: {{ forloop.counter }}00ms;">
+      <div class="card h-100 region-card">
+        {% if region.image_url %}
+          <img src="{{ region.image_url }}" class="card-img-top" alt="{{ region.name }}" style="height: 200px; object-fit: cover;">
+        {% else %}
+          <div class="card-img-top bg-gradient d-flex align-items-center justify-content-center" style="height: 200px; background: linear-gradient(135deg, #667eea, #764ba2);">
+            <i class="bi bi-geo-alt-fill text-white" style="font-size: 3rem;"></i>
+          </div>
+        {% endif %}
+        <div class="card-body">
+          <h5 class="card-title fw-bold">
+            <i class="bi bi-geo-alt-fill text-primary"></i> {{ region.name }}
+            <br>
+            <small class="text-muted">{{ region.city }}</small>
+          </h5>
+          
+          <!-- 평점 표시 -->
+          <div class="mb-3">
+            {% if region.reviews.count > 0 %}
+              <span class="text-warning">
+                {% for i in "12345" %}
+                  {% if forloop.counter <= region.avg_rating %}
+                    <i class="bi bi-star-fill"></i>
+                  {% else %}
+                    <i class="bi bi-star"></i>
+                  {% endif %}
+                {% endfor %}
+              </span>
+              <span class="region-score ms-2">{{ region.avg_rating|default:0 }}점</span>
+            {% else %}
+              <span class="text-muted"><i class="bi bi-star"></i> 평점 없음</span>
+            {% endif %}
+          </div>
+          
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-bus-front text-success me-2"></i>
+                <div>
+                  <small class="text-muted d-block">교통</small>
+                  <strong>{{ region.traffic_score }}점</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-mortarboard text-info me-2"></i>
+                <div>
+                  <small class="text-muted d-block">교육</small>
+                  <strong>{{ region.education_score }}점</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-hospital text-danger me-2"></i>
+                <div>
+                  <small class="text-muted d-block">의료</small>
+                  <strong>{{ region.medical_score }}점</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-currency-dollar text-warning me-2"></i>
+                <div>
+                  <small class="text-muted d-block">생활비</small>
+                  <strong>{{ region.cost_level }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {% if region.population %}
+          <div class="mb-3">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-people text-secondary me-2"></i>
+              <div>
+                <small class="text-muted d-block">인구</small>
+                <strong>{{ region.population|floatformat:0 }}명</strong>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          <div class="d-flex justify-content-between align-items-center mt-auto">
+            <a href="{% url 'region_detail' region.name %}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-eye"></i> 자세히 보기
+            </a>
+            {% if user.is_authenticated %}
+              <a href="{% url 'add_review' region.name %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-chat-dots"></i> 리뷰
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="col-12 text-center py-5 fade-in-up">
+      <i class="bi bi-search display-1 text-muted"></i>
+      <h4 class="text-muted mt-3">검색 결과가 없습니다</h4>
+      <p class="text-muted">다른 조건으로 검색해보세요.</p>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- 페이지네이션 -->
+{% if regions.has_other_pages %}
+<nav aria-label="페이지 네비게이션" class="mt-5 fade-in-up">
+  <ul class="pagination justify-content-center">
+    {% if regions.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ regions.previous_page_number }}">이전</a>
+      </li>
+    {% endif %}
+    
+    {% for num in regions.paginator.page_range %}
+      {% if regions.number == num %}
+        <li class="page-item active">
+          <span class="page-link">{{ num }}</span>
+        </li>
+      {% elif num > regions.number|add:'-3' and num < regions.number|add:'3' %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+    
+    {% if regions.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ regions.next_page_number }}">다음</a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+<!-- 홈페이지 정보 섹션 (맨 아래) -->
+<div class="mt-5 py-5 bg-light rounded">
+  <div class="text-center mb-4">
+    <h2 class="display-5 fw-bold text-gradient mb-3">
+      <i class="bi bi-geo-alt-fill text-primary"></i> 나에게 맞는 지역을 찾아보세요
+    </h2>
+    <p class="lead text-muted">교통, 교육, 의료, 생활비를 기반으로 최적의 지역을 추천해드립니다</p>
+    <div class="row justify-content-center mt-4">
+      <div class="col-md-8">
+        <div class="row text-center">
+          <div class="col-md-3 mb-3">
+            <div class="p-3">
+              <i class="bi bi-bus-front text-success" style="font-size: 2rem;"></i>
+              <h6 class="mt-2">교통 편의성</h6>
+              <small class="text-muted">대중교통 접근성 분석</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="p-3">
+              <i class="bi bi-mortarboard text-info" style="font-size: 2rem;"></i>
+              <h6 class="mt-2">교육 환경</h6>
+              <small class="text-muted">학교 및 교육시설 평가</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="p-3">
+              <i class="bi bi-hospital text-danger" style="font-size: 2rem;"></i>
+              <h6 class="mt-2">의료 서비스</h6>
+              <small class="text-muted">병원 및 의료시설 현황</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="p-3">
+              <i class="bi bi-currency-dollar text-warning" style="font-size: 2rem;"></i>
+              <h6 class="mt-2">생활비 수준</h6>
+              <small class="text-muted">주거비 및 생활비 분석</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% if not user.is_authenticated %}
+    <div class="mt-4">
+      <a href="{% url 'register' %}" class="btn btn-primary btn-lg me-3">
+        <i class="bi bi-person-plus"></i> 회원가입
+      </a>
+      <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">
+        <i class="bi bi-box-arrow-in-right"></i> 로그인
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 시/도별 인구 분포 차트
+    const ctx = document.getElementById('populationDistributionChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                '경기도', '서울특별시', '경상남도', '경상북도', '전라남도',
+                '충청남도', '전북특별자치도', '부산광역시', '충청북도', '인천광역시',
+                '대구광역시', '제주특별자치도', '대전광역시', '울산광역시',
+                '세종특별자치시', '광주광역시', '강원특별자치도'
+            ],
+            datasets: [{
+                data: [1350, 950, 330, 260, 180, 150, 140, 340, 160, 290,
+                       240, 60, 150, 120, 40, 140, 150],
+                backgroundColor: [
+                    '#007bff', '#28a745', '#17a2b8', '#ffc107', '#dc3545',
+                    '#6f42c1', '#20c997', '#fd7e14', '#e83e8c', '#6c757d',
+                    '#343a40', '#f8f9fa', '#dee2e6', '#adb5bd', '#495057',
+                    '#212529', '#000000'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '전국 시/도별 인구 분포 (만명)',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value}만명 (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '50%'
+        }
+    });
+    
+    // 지도 초기화 (Leaflet 사용)
+    let map;
+    let markers = [];
+    
+    function initMap() {
+        // 한국 중심으로 지도 초기화
+        map = L.map('map').setView([36.5, 127.5], 7);
+        
+        // OpenStreetMap 타일 레이어 추가
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // 지역 데이터를 지도에 표시
+        loadRegionsOnMap();
+        
+        // 필터 이벤트 리스너
+        document.getElementById('cityFilter').addEventListener('change', filterMapMarkers);
+        document.getElementById('scoreFilter').addEventListener('change', filterMapMarkers);
+    }
+    
+    function loadRegionsOnMap() {
+        // Django에서 전달된 지역 데이터 사용
+        const regions = [
+            {% for region in regions %}
+            {
+                name: "{{ region.name }}",
+                city: "{{ region.city }}",
+                lat: {{ region.latitude }},
+                lng: {{ region.longitude }},
+                traffic: {{ region.traffic_score }},
+                education: {{ region.education_score }},
+                medical: {{ region.medical_score }},
+                cost: "{{ region.cost_level }}",
+                description: "{{ region.description|truncatechars:100 }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        // 기존 마커 제거
+        markers.forEach(marker => map.removeLayer(marker));
+        markers = [];
+        
+        // 각 지역에 마커 추가
+        regions.forEach(region => {
+            const avgScore = Math.round((region.traffic + region.education + region.medical) / 3);
+            const color = getMarkerColor(region.traffic);
+            
+            // 커스텀 아이콘 생성
+            const customIcon = L.divIcon({
+                className: 'custom-marker',
+                html: `
+                    <div style="
+                        width: 32px; 
+                        height: 32px; 
+                        background-color: ${color}; 
+                        border: 2px solid white; 
+                        border-radius: 50%; 
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: center; 
+                        color: white; 
+                        font-weight: bold; 
+                        font-size: 12px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    ">
+                        ${avgScore}
+                    </div>
+                `,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+            
+            const marker = L.marker([region.lat, region.lng], { icon: customIcon }).addTo(map);
+            
+            // 팝업 내용
+            const popupContent = `
+                <div style="padding: 10px; min-width: 200px;">
+                    <h6 style="margin: 0 0 8px 0; color: #007bff;">${region.name}</h6>
+                    <p style="margin: 0 0 5px 0; font-size: 12px; color: #666;">${region.city}</p>
+                    <div style="margin: 8px 0;">
+                        <div style="display: flex; justify-content: space-between; margin: 2px 0;">
+                            <span style="font-size: 11px;">교통:</span>
+                            <span style="font-size: 11px; font-weight: bold;">${region.traffic}점</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 2px 0;">
+                            <span style="font-size: 11px;">교육:</span>
+                            <span style="font-size: 11px; font-weight: bold;">${region.education}점</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 2px 0;">
+                            <span style="font-size: 11px;">의료:</span>
+                            <span style="font-size: 11px; font-weight: bold;">${region.medical}점</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 2px 0;">
+                            <span style="font-size: 11px;">생활비:</span>
+                            <span style="font-size: 11px; font-weight: bold;">${region.cost}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px; text-align: center;">
+                        <a href="/regions/${region.name}/" style="font-size: 11px; color: #007bff; text-decoration: none;">상세보기 →</a>
+                    </div>
+                </div>
+            `;
+            
+            marker.bindPopup(popupContent);
+            markers.push(marker);
+        });
+    }
+    
+    function getMarkerColor(score) {
+        if (score >= 80) return '#28a745'; // 초록
+        if (score >= 70) return '#17a2b8'; // 청록
+        if (score >= 60) return '#ffc107'; // 노랑
+        return '#dc3545'; // 빨강
+    }
+    
+    function filterMapMarkers() {
+        const cityFilter = document.getElementById('cityFilter').value;
+        const scoreFilter = document.getElementById('scoreFilter').value;
+        
+        markers.forEach(marker => {
+            // 마커에서 지역 데이터 추출 (간단한 방법)
+            const popup = marker.getPopup();
+            const content = popup.getContent();
+            const regionName = content.match(/<h6[^>]*>([^<]+)<\/h6>/)[1];
+            const regionCity = content.match(/<p[^>]*>([^<]+)<\/p>/)[1];
+            
+            let show = true;
+            
+            if (cityFilter && regionCity !== cityFilter) {
+                show = false;
+            }
+            
+            if (scoreFilter) {
+                const scores = content.match(/(\d+)점/g);
+                if (scores && scores.length >= 3) {
+                    const avgScore = (parseInt(scores[0]) + parseInt(scores[1]) + parseInt(scores[2])) / 3;
+                    if (avgScore < parseInt(scoreFilter)) {
+                        show = false;
+                    }
+                }
+            }
+            
+            if (show) {
+                map.addLayer(marker);
+            } else {
+                map.removeLayer(marker);
+            }
+        });
+    }
+    
+    // 지도 탭이 활성화될 때 지도 리사이즈
+    document.getElementById('map-tab').addEventListener('shown.bs.tab', function() {
+        if (map) {
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+    });
+    
+    // 실시간 업데이트 기능
+    function updateRealtimeData() {
+        // 실시간 통계 업데이트
+        fetch('/api/realtime/stats/')
+            .then(response => response.json())
+            .then(data => {
+                // 통계 카드 업데이트
+                const statsCards = document.querySelectorAll('.stats-card');
+                if (statsCards.length > 0) {
+                    statsCards[0].querySelector('.h3').textContent = data.total_regions;
+                    statsCards[1].querySelector('.h3').textContent = data.total_reviews;
+                    statsCards[2].querySelector('.h3').textContent = data.total_comparisons;
+                    statsCards[3].querySelector('.h3').textContent = data.new_news;
+                }
+                
+                // 마지막 업데이트 시간 표시
+                const lastUpdated = document.getElementById('lastUpdated');
+                if (lastUpdated) {
+                    const updateTime = new Date(data.last_updated);
+                    lastUpdated.textContent = `마지막 업데이트: ${updateTime.toLocaleTimeString()}`;
+                }
+            })
+            .catch(error => console.error('실시간 통계 업데이트 실패:', error));
+        
+        // 실시간 정책 업데이트
+        fetch('/api/realtime/news/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.news && data.news.length > 0) {
+                    updateRealtimeNews(data.news);
+                }
+            })
+            .catch(error => console.error('실시간 정책 업데이트 실패:', error));
+    }
+    
+    function updateRealtimeNews(news) {
+        const newsContainer = document.getElementById('realtimeNews');
+        if (!newsContainer) return;
+        
+        let newsHTML = '<h6 class="fw-bold mb-3"><i class="bi bi-lightning-charge text-warning"></i> 실시간 정책</h6>';
+        
+        news.forEach(item => {
+            const publishTime = new Date(item.published_at);
+            const timeAgo = getTimeAgo(publishTime);
+            
+            newsHTML += `
+                <div class="alert alert-light border-start border-warning border-3 mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">${item.title}</h6>
+                            <p class="small text-muted mb-1">${item.content}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-${getCategoryColor(item.category)}">${item.category}</span>
+                                <small class="text-muted">${timeAgo}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        newsContainer.innerHTML = newsHTML;
+    }
+    
+    function getTimeAgo(date) {
+        const now = new Date();
+        const diff = now - date;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+        
+        if (minutes < 1) return '방금 전';
+        if (minutes < 60) return `${minutes}분 전`;
+        if (hours < 24) return `${hours}시간 전`;
+        return `${days}일 전`;
+    }
+    
+    function getCategoryColor(category) {
+        const colors = {
+            '일반': 'secondary',
+            '교통': 'primary',
+            '교육': 'success',
+            '의료': 'danger',
+            '주거': 'info',
+            '정책': 'warning'
+        };
+        return colors[category] || 'secondary';
+    }
+    
+    // 30초마다 실시간 데이터 업데이트
+    setInterval(updateRealtimeData, 30000);
+    
+    // 페이지 로드 시 즉시 업데이트
+    updateRealtimeData();
+    
+    // URL 해시 확인하여 모달 자동 열기
+    if (window.location.hash === '#recommendation') {
+      // 페이지 로드 완료 후 모달 열기
+      setTimeout(() => {
+        const modalElement = document.getElementById('recommendationModal');
+        if (modalElement) {
+          const modal = new bootstrap.Modal(modalElement, {
+            backdrop: 'static',
+            keyboard: false
+          });
+          modal.show();
+          // URL에서 해시 제거
+          history.replaceState(null, null, window.location.pathname);
+        }
+      }, 500);
+    }
+    
+    // 간단한 추천 기능 (testRecommendation은 전역으로 이동됨)
+
+    function getRecommendations() {
+        alert('모달 추천 버튼 클릭됨!');
+        document.getElementById('recommendationResults').style.display = 'block';
+        document.getElementById('recommendedRegions').innerHTML = '<div class="col-12"><div class="alert alert-primary"><h5>추천 결과</h5><p>강남구, 송파구, 수원시가 추천되었습니다!</p></div></div>';
+    }
+    
+});
+
+// 전역 함수들 (DOMContentLoaded 밖에 정의)
+function showRecommendations() {
+    console.log('showRecommendations 함수 호출됨');
+    const resultsDiv = document.getElementById('recommendationResults');
+    const cardsDiv = document.getElementById('recommendationCards');
+    
+    console.log('resultsDiv:', resultsDiv);
+    console.log('cardsDiv:', cardsDiv);
+    
+    // 로딩 표시
+    cardsDiv.innerHTML = '<div class="col-12"><div class="text-center"><div class="spinner-border text-warning" role="status"><span class="visually-hidden">로딩중...</span></div><p class="mt-2">추천 지역을 찾고 있습니다...</p></div></div>';
+    resultsDiv.style.display = 'block';
+    
+    // AJAX로 추천 데이터 가져오기
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    fetch('/api/recommendations/', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        console.log('API 응답 상태:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('API 응답 데이터:', data);
+        if (data.success && data.recommendations) {
+            displayRecommendations(data.recommendations);
+        } else {
+            cardsDiv.innerHTML = '<div class="col-12"><div class="alert alert-warning"><h5>추천 결과 없음</h5><p>선호도를 먼저 설정해주세요.</p><a href="/preferences/" class="btn btn-primary">선호도 설정</a></div></div>';
+        }
+    })
+    .catch(error => {
+        console.error('추천 데이터 로딩 실패:', error);
+        cardsDiv.innerHTML = '<div class="col-12"><div class="alert alert-danger"><h5>오류 발생</h5><p>추천 시스템에 문제가 발생했습니다. 콘솔을 확인해주세요.</p></div></div>';
+    });
+}
+
+function displayRecommendations(recommendations) {
+    const cardsDiv = document.getElementById('recommendationCards');
+    let html = '';
+    
+    recommendations.forEach((region, index) => {
+        html += `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm border-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-geo-alt-fill text-primary"></i> ${region.name}
+                            </h5>
+                            <span class="badge bg-warning text-dark">추천</span>
+                        </div>
+                        
+                        <ul class="list-unstyled">
+                            <li class="mb-1">
+                                <i class="bi bi-bus-front text-success"></i> 교통: ${region.traffic_score}점
+                            </li>
+                            <li class="mb-1">
+                                <i class="bi bi-mortarboard text-info"></i> 교육: ${region.education_score}점
+                            </li>
+                            <li class="mb-1">
+                                <i class="bi bi-currency-dollar text-warning"></i> 생활비: ${region.cost_level}
+                            </li>
+                            ${region.population ? `<li class="mb-1"><i class="bi bi-people text-secondary"></i> 인구: ${region.population}명</li>` : ''}
+                        </ul>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <a href="/regions/${region.name}/" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> 자세히 보기
+                            </a>
+                            <a href="/reviews/add/${region.name}/" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-chat"></i> 리뷰
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    cardsDiv.innerHTML = html;
+}
+
+</script>
+{% endblock %} 

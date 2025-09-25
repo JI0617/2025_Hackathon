@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}지역 추천 홈{% endblock %}
+
+{% block content %}
+<!-- 지역 추천 섹션 -->
+<div class="mb-5">
+  <div class="text-center mb-4">
+    <h2><i class="bi bi-star-fill text-warning"></i> 지역 추천</h2>
+    <p class="text-muted">당신에게 맞는 최적의 지역을 찾아보세요</p>
+    <button class="btn btn-warning btn-lg" onclick="showRecommendation()">
+      <i class="bi bi-star"></i> 추천받기
+    </button>
+  </div>
+</div>
+
+<!-- 추천 결과 영역 -->
+<div id="recommendationResults" class="mb-5" style="display: none;">
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-star-fill text-warning"></i> 추천 결과</h5>
+    </div>
+    <div class="card-body">
+      <div id="recommendedRegions" class="row">
+        <!-- 추천 결과가 여기에 표시됩니다 -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 통계 대시보드 -->
+<div class="row mb-5">
+  <div class="col-md-3 mb-3">
+    <div class="card text-center h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="display-6 text-primary mb-2">
+          <i class="bi bi-geo-alt-fill"></i>
+        </div>
+        <h4 class="fw-bold text-dark">{{ total_regions_count }}</h4>
+        <p class="text-muted mb-0">등록된 지역</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-center h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="display-6 text-success mb-2">
+          <i class="bi bi-star-fill"></i>
+        </div>
+        <h4 class="fw-bold text-dark">{{ regions|length }}</h4>
+        <p class="text-muted mb-0">추천 지역</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-center h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="display-6 text-info mb-2">
+          <i class="bi bi-people-fill"></i>
+        </div>
+        <h4 class="fw-bold text-dark">{% if user.is_authenticated %}1{% else %}0{% endif %}</h4>
+        <p class="text-muted mb-0">활성 사용자</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-center h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="display-6 text-warning mb-2">
+          <i class="bi bi-chat-dots-fill"></i>
+        </div>
+        <h4 class="fw-bold text-dark">{{ total_reviews_count }}</h4>
+        <p class="text-muted mb-0">총 리뷰</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 정책 섹션 -->
+<div class="row mb-5">
+  <div class="col-12">
+    <div class="card border-primary">
+      <div class="card-header bg-primary bg-opacity-10">
+        <h5 class="mb-0">
+          <i class="bi bi-file-earmark-text text-primary"></i> 정책
+        </h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">정책 정보가 여기에 표시됩니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 시/도별 인구 분포 차트 -->
+<div class="row mb-5">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-people-fill"></i> 시/도별 인구 분포</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8">
+            <canvas id="populationChart" width="400" height="200"></canvas>
+          </div>
+          <div class="col-md-4">
+            <h6 class="text-muted mb-3">상위 5개 시/도 (인구)</h6>
+            <div class="list-group list-group-flush">
+              <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span><i class="bi bi-1-circle text-primary me-2"></i>경기도</span>
+                <span class="badge bg-primary rounded-pill">1,350만명</span>
+              </div>
+              <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span><i class="bi bi-2-circle text-success me-2"></i>서울특별시</span>
+                <span class="badge bg-success rounded-pill">950만명</span>
+              </div>
+              <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span><i class="bi bi-3-circle text-info me-2"></i>경상남도</span>
+                <span class="badge bg-info rounded-pill">330만명</span>
+              </div>
+              <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span><i class="bi bi-4-circle text-warning me-2"></i>경상북도</span>
+                <span class="badge bg-warning rounded-pill">260만명</span>
+              </div>
+              <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span><i class="bi bi-5-circle text-danger me-2"></i>전라남도</span>
+                <span class="badge bg-danger rounded-pill">180만명</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 지역 목록 -->
+<div class="row">
+  {% for region in regions %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="card h-100">
+        {% if region.image_url %}
+          <img src="{{ region.image_url }}" class="card-img-top" alt="{{ region.name }}" style="height: 200px; object-fit: cover;">
+        {% else %}
+          <div class="card-img-top bg-gradient d-flex align-items-center justify-content-center" style="height: 200px; background: linear-gradient(135deg, #667eea, #764ba2);">
+            <i class="bi bi-geo-alt-fill text-white" style="font-size: 3rem;"></i>
+          </div>
+        {% endif %}
+        <div class="card-body">
+          <h5 class="card-title fw-bold">
+            <i class="bi bi-geo-alt-fill text-primary"></i> {{ region.name }}
+            <br>
+            <small class="text-muted">{{ region.city }}</small>
+          </h5>
+          
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-bus-front text-success me-2"></i>
+                <div>
+                  <small class="text-muted d-block">교통</small>
+                  <strong>{{ region.traffic_score }}점</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-mortarboard text-info me-2"></i>
+                <div>
+                  <small class="text-muted d-block">교육</small>
+                  <strong>{{ region.education_score }}점</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-hospital text-danger me-2"></i>
+                <div>
+                  <small class="text-muted d-block">의료</small>
+                  <strong>{{ region.medical_score }}점</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-currency-dollar text-warning me-2"></i>
+                <div>
+                  <small class="text-muted d-block">생활비</small>
+                  <strong>{{ region.cost_level }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="d-flex justify-content-between align-items-center mt-auto">
+            <a href="{% url 'region_detail' region.name %}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-eye"></i> 자세히 보기
+            </a>
+            {% if user.is_authenticated %}
+              <a href="{% url 'add_review' region.name %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-chat-dots"></i> 리뷰
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="col-12 text-center py-5">
+      <i class="bi bi-search display-1 text-muted"></i>
+      <h4 class="text-muted mt-3">검색 결과가 없습니다</h4>
+      <p class="text-muted">다른 조건으로 검색해보세요.</p>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- 홈페이지 정보 섹션 -->
+<div class="mt-5 py-5 bg-light rounded">
+  <div class="text-center mb-4">
+    <h2 class="display-5 fw-bold text-gradient mb-3">
+      <i class="bi bi-geo-alt-fill text-primary"></i> 나에게 맞는 지역을 찾아보세요
+    </h2>
+    <p class="lead text-muted">교통, 교육, 의료, 생활비를 기반으로 최적의 지역을 추천해드립니다</p>
+    <div class="row justify-content-center mt-4">
+      <div class="col-md-8">
+        <div class="row text-center">
+          <div class="col-md-3 mb-3">
+            <div class="p-3">
+              <i class="bi bi-bus-front text-success" style="font-size: 2rem;"></i>
+              <h6 class="mt-2">교통 편의성</h6>
+              <small class="text-muted">대중교통 접근성 분석</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="p-3">
+              <i class="bi bi-mortarboard text-info" style="font-size: 2rem;"></i>
+              <h6 class="mt-2">교육 환경</h6>
+              <small class="text-muted">학교 및 교육시설 평가</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="p-3">
+              <i class="bi bi-hospital text-danger" style="font-size: 2rem;"></i>
+              <h6 class="mt-2">의료 서비스</h6>
+              <small class="text-muted">병원 및 의료시설 현황</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="p-3">
+              <i class="bi bi-currency-dollar text-warning" style="font-size: 2rem;"></i>
+              <h6 class="mt-2">생활비 수준</h6>
+              <small class="text-muted">주거비 및 생활비 분석</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% if not user.is_authenticated %}
+    <div class="mt-4">
+      <a href="{% url 'register' %}" class="btn btn-primary btn-lg me-3">
+        <i class="bi bi-person-plus"></i> 회원가입
+      </a>
+      <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">
+        <i class="bi bi-box-arrow-in-right"></i> 로그인
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+// 가장 간단한 추천 기능
+function showRecommendation() {
+    alert('추천받기 버튼이 클릭되었습니다!');
+    
+    const resultsDiv = document.getElementById('recommendationResults');
+    const regionsDiv = document.getElementById('recommendedRegions');
+    
+    resultsDiv.style.display = 'block';
+    regionsDiv.innerHTML = `
+        <div class="col-md-6 mb-3">
+            <div class="card h-100 border-warning">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-geo-alt-fill text-warning"></i> 강남구
+                    </h6>
+                    <p class="text-muted small">서울특별시</p>
+                    <div class="row g-1 mb-2">
+                        <div class="col-4"><small class="text-muted d-block">교통</small><strong class="small">85점</strong></div>
+                        <div class="col-4"><small class="text-muted d-block">교육</small><strong class="small">90점</strong></div>
+                        <div class="col-4"><small class="text-muted d-block">의료</small><strong class="small">88점</strong></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">생활비: 높음</small>
+                        <span class="badge bg-warning">87.7점</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card h-100 border-warning">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-geo-alt-fill text-warning"></i> 송파구
+                    </h6>
+                    <p class="text-muted small">서울특별시</p>
+                    <div class="row g-1 mb-2">
+                        <div class="col-4"><small class="text-muted d-block">교통</small><strong class="small">82점</strong></div>
+                        <div class="col-4"><small class="text-muted d-block">교육</small><strong class="small">85점</strong></div>
+                        <div class="col-4"><small class="text-muted d-block">의료</small><strong class="small">80점</strong></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">생활비: 높음</small>
+                        <span class="badge bg-warning">82.3점</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card h-100 border-warning">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-geo-alt-fill text-warning"></i> 수원시
+                    </h6>
+                    <p class="text-muted small">경기도</p>
+                    <div class="row g-1 mb-2">
+                        <div class="col-4"><small class="text-muted d-block">교통</small><strong class="small">75점</strong></div>
+                        <div class="col-4"><small class="text-muted d-block">교육</small><strong class="small">78점</strong></div>
+                        <div class="col-4"><small class="text-muted d-block">의료</small><strong class="small">72점</strong></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">생활비: 보통</small>
+                        <span class="badge bg-warning">75.0점</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+</script>
+{% endblock %}

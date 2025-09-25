@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}개인화 추천{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+  <h2><i class="bi bi-star-fill text-warning"></i> 당신을 위한 맞춤 추천</h2>
+  <p class="text-muted">선호도에 기반한 개인화된 지역 추천입니다</p>
+</div>
+
+{% if recommended_regions %}
+  <div class="row">
+    {% for region in recommended_regions %}
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm border-warning">
+          {% if region.image_url %}
+            <img src="{{ region.image_url }}" class="card-img-top" alt="{{ region.name }}">
+          {% endif %}
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h5 class="card-title mb-0">
+                <i class="bi bi-geo-alt-fill text-primary"></i> {{ region.name }}
+              </h5>
+              <span class="badge bg-warning text-dark">추천</span>
+            </div>
+            
+            <!-- 평점 표시 -->
+            <div class="mb-3">
+              {% if region.reviews.count > 0 %}
+                <span class="text-warning">
+                  {% for i in "12345" %}
+                    {% if forloop.counter <= region.avg_rating %}
+                      <i class="bi bi-star-fill"></i>
+                    {% else %}
+                      <i class="bi bi-star"></i>
+                    {% endif %}
+                  {% endfor %}
+                </span>
+                <small class="text-muted">({{ region.avg_rating|default:0 }})</small>
+              {% else %}
+                <small class="text-muted">평점 없음</small>
+              {% endif %}
+            </div>
+            
+            <ul class="list-unstyled">
+              <li class="mb-1">
+                <i class="bi bi-bus-front text-success"></i> 교통: {{ region.traffic_score }}점
+              </li>
+              <li class="mb-1">
+                <i class="bi bi-mortarboard text-info"></i> 교육: {{ region.education_score }}점
+              </li>
+              <li class="mb-1">
+                <i class="bi bi-currency-dollar text-warning"></i> 생활비: {{ region.cost_level }}
+              </li>
+              {% if region.population %}
+                <li class="mb-1">
+                  <i class="bi bi-people text-secondary"></i> 인구: {{ region.population|floatformat:0 }}명
+                </li>
+              {% endif %}
+            </ul>
+            
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <a href="{% url 'region_detail' region.name %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye"></i> 자세히 보기
+              </a>
+              <a href="{% url 'add_review' region.name %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-chat"></i> 리뷰
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  
+  <div class="text-center mt-4">
+    <a href="{% url 'comparison_list' %}" class="btn btn-info">
+      <i class="bi bi-bar-chart"></i> 추천 지역들 비교하기
+    </a>
+  </div>
+{% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-star display-1 text-muted"></i>
+    <h4 class="mt-3">추천할 지역이 없습니다</h4>
+    <p class="text-muted">선호도를 다시 설정해보세요.</p>
+    <a href="{% url 'preferences' %}" class="btn btn-primary">
+      <i class="bi bi-gear"></i> 선호도 설정
+    </a>
+  </div>
+{% endif %}
+
+<div class="mt-5">
+  <div class="card">
+    <div class="card-header">
+      <h5><i class="bi bi-lightbulb"></i> 추천 시스템 안내</h5>
+    </div>
+    <div class="card-body">
+      <p>이 추천 시스템은 다음과 같은 요소를 고려합니다:</p>
+      <ul>
+        <li><strong>교통 중요도:</strong> 설정한 교통 중요도에 따라 교통 점수가 높은 지역을 우선 추천</li>
+        <li><strong>교육 중요도:</strong> 설정한 교육 중요도에 따라 교육 점수가 높은 지역을 우선 추천</li>
+        <li><strong>비용 중요도:</strong> 설정한 비용 중요도와 선호하는 생활비 수준을 고려하여 추천</li>
+        <li><strong>종합 점수:</strong> 모든 요소를 종합하여 가장 적합한 지역을 추천</li>
+      </ul>
+      <p class="mb-0">
+        <a href="{% url 'preferences' %}" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-gear"></i> 선호도 수정
+        </a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %} 

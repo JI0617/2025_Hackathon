@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}선호도 설정{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow">
+      <div class="card-header text-center">
+        <h3><i class="bi bi-gear"></i> 선호도 설정</h3>
+        <p class="text-muted mb-0">당신의 선호도를 설정하여 맞춤 추천을 받아보세요</p>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          
+          <div class="row">
+            <div class="col-md-3">
+              <div class="mb-4">
+                <label for="{{ form.traffic_importance.id_for_label }}" class="form-label">
+                  <i class="bi bi-bus-front text-success"></i> 교통 중요도
+                </label>
+                {{ form.traffic_importance }}
+                <div class="form-text">교통 편의성의 중요도를 선택하세요</div>
+              </div>
+            </div>
+            
+            <div class="col-md-3">
+              <div class="mb-4">
+                <label for="{{ form.education_importance.id_for_label }}" class="form-label">
+                  <i class="bi bi-mortarboard text-info"></i> 교육 중요도
+                </label>
+                {{ form.education_importance }}
+                <div class="form-text">교육 환경의 중요도를 선택하세요</div>
+              </div>
+            </div>
+            
+            <div class="col-md-3">
+              <div class="mb-4">
+                <label for="{{ form.medical_importance.id_for_label }}" class="form-label">
+                  <i class="bi bi-hospital text-danger"></i> 의료 중요도
+                </label>
+                {{ form.medical_importance }}
+                <div class="form-text">의료 시설의 중요도를 선택하세요</div>
+              </div>
+            </div>
+            
+            <div class="col-md-3">
+              <div class="mb-4">
+                <label for="{{ form.cost_importance.id_for_label }}" class="form-label">
+                  <i class="bi bi-currency-dollar text-warning"></i> 비용 중요도
+                </label>
+                {{ form.cost_importance }}
+                <div class="form-text">생활비의 중요도를 선택하세요</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <div class="mb-4">
+                <label for="{{ form.preferred_cost_level.id_for_label }}" class="form-label">
+                  <i class="bi bi-piggy-bank text-primary"></i> 선호하는 생활비 수준
+                </label>
+                {{ form.preferred_cost_level }}
+                <div class="form-text">어떤 수준의 생활비를 선호하시나요?</div>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="mb-4">
+                <label for="{{ form.monthly_rent_budget.id_for_label }}" class="form-label">
+                  <i class="bi bi-house text-success"></i> 월세 예산
+                </label>
+                {{ form.monthly_rent_budget }}
+                <div class="form-text">월세 예산을 만원 단위로 입력하세요</div>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="mb-4">
+                <label for="{{ form.deposit_budget.id_for_label }}" class="form-label">
+                  <i class="bi bi-safe text-info"></i> 보증금 예산
+                </label>
+                {{ form.deposit_budget }}
+                <div class="form-text">보증금 예산을 만원 단위로 입력하세요</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save"></i> 선호도 저장
+            </button>
+            <a href="{% url 'home' %}#recommendation" class="btn btn-outline-warning" onclick="openRecommendationModal()">
+              <i class="bi bi-star"></i> 추천받기
+            </a>
+          </div>
+        </form>
+        
+        <hr>
+        
+        <div class="alert alert-info">
+          <h6><i class="bi bi-info-circle"></i> 선호도 설정 가이드</h6>
+          <ul class="mb-0">
+            <li><strong>1점:</strong> 거의 고려하지 않음</li>
+            <li><strong>3점:</strong> 보통 중요함</li>
+            <li><strong>5점:</strong> 매우 중요함</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 
