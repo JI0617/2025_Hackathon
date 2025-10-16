@@ -12,6 +12,13 @@ from langchain_core.runnables import RunnableLambda, RunnableMap, RunnablePassth
 # --- 1. 환경 변수 및 기본 설정 ---
 
 load_dotenv("key.env")
+
+# LangSmith 연결 설정
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
+os.environ["LANGCHAIN_PROJECT"] = "Card-Recommand" # 프로젝트 이름을 설정할 수 있습니다.
+
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
