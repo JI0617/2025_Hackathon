@@ -65,7 +65,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # 1. 데이터 로드 및 초기 저장 (경로는 이전 요청 그대로 유지)
-        csv_file_path = 'c:/Users/user/Documents/2025_Hackathon/Data/통합_테이블.csv'
+        csv_file_path = 'c:/Users/minky/Documents/workspace/Hackathon/2025_Hackathon/Hackathon/통합_테이블.csv'
         
         if not os.path.exists(csv_file_path):
              self.stdout.write(self.style.ERROR(f"CSV 파일을 찾을 수 없습니다: {csv_file_path}"))
