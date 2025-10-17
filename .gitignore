@@ -5,7 +5,7 @@ datasets/
 dataset/
 *.pt
 ko_new.txt
-.env
+*.env
 /real
 
 # Byte-compiled / optimized / DLL files
