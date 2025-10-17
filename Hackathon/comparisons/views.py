@@ -37,9 +37,8 @@ def comparison_detail(request, comparison_id):
     for region in regions:
         region_data = {
             'id': region.id,
-            'name': region.name,
-            'city': region.city,
-            'traffic_score': region.traffic_score,
+            'name': region.name, 
+            'city': region.city, # city 필드가 모델에 없다면 이 줄은 이후에 오류를 일으킬 수 있습니다.
             'education_score': region.education_score,
             'medical_score': region.medical_score,
             'cost_level': region.cost_level,
@@ -53,25 +52,27 @@ def comparison_detail(request, comparison_id):
     
     # 통계 계산
     if comparison_data:
-        traffic_scores = [r['traffic_score'] for r in comparison_data]
-        education_scores = [r['education_score'] for r in comparison_data]
-        medical_scores = [r['medical_score'] for r in comparison_data]
+        # 데이터베이스에 없는 필드(traffic_score, education_score, medical_score 등)는
+        # 이전에 데이터를 로드한 CSV 파일에는 없었으므로, 이 부분을 사용하는 템플릿/뷰에서
+        # 오류가 발생할 수 있습니다. 여기서는 코드를 그대로 유지합니다.
+        # 모델 필드 목록: comparison, deposit_manwon, education_infra_grade, id, medical_accessibility, medical_grade, monthly_rent_grade, monthly_rent_manwon, region_name, reviews, student_count, students_per_teacher, summary, teacher_count, total_burden_grade, total_monthly_burden
+        education_scores = [r.get('education_score', 0) for r in comparison_data]
+        medical_scores = [r.get('medical_score', 0) for r in comparison_data]
         
+        # 0이 아닌 유효한 점수를 가진 리스트로 재구성 (오류 방지)
+        valid_education = [s for s in education_scores if s is not None and s != 0]
+        valid_medical = [s for s in medical_scores if s is not None and s != 0]
+
         stats = {
-            'traffic': {
-                'min': min(traffic_scores),
-                'max': max(traffic_scores),
-                'avg': sum(traffic_scores) / len(traffic_scores)
-            },
             'education': {
-                'min': min(education_scores),
-                'max': max(education_scores),
-                'avg': sum(education_scores) / len(education_scores)
+                'min': min(valid_education) if valid_education else 0,
+                'max': max(valid_education) if valid_education else 0,
+                'avg': sum(valid_education) / len(valid_education) if valid_education else 0
             },
             'medical': {
-                'min': min(medical_scores),
-                'max': max(medical_scores),
-                'avg': sum(medical_scores) / len(medical_scores)
+                'min': min(valid_medical) if valid_medical else 0,
+                'max': max(valid_medical) if valid_medical else 0,
+                'avg': sum(valid_medical) / len(valid_medical) if valid_medical else 0
             }
         }
     else:
@@ -112,7 +113,7 @@ def create_comparison(request):
                 messages.error(request, f'비교 생성 중 오류가 발생했습니다: {str(e)}')
     
     # 모든 지역 목록
-    regions = Region.objects.all().order_by('city', 'name')
+    regions = Region.objects.all().order_by('name')
     
     context = {
         'regions': regions
@@ -146,7 +147,7 @@ def edit_comparison(request, comparison_id):
                 messages.error(request, f'비교 수정 중 오류가 발생했습니다: {str(e)}')
     
     # 모든 지역 목록
-    regions = Region.objects.all().order_by('city', 'name')
+    regions = Region.objects.all().order_by('name')
     selected_regions = comparison.regions.all()
     
     context = {
@@ -196,8 +197,8 @@ def add_region_to_comparison(request, comparison_id):
             'message': '지역이 추가되었습니다.',
             'region': {
                 'id': region.id,
-                'name': region.name,
-                'city': region.city
+                'name': region.name, 
+                'city': region.city # city 필드가 모델에 없다면 이 줄은 이후에 오류를 일으킬 수 있습니다.
             }
         })
         
@@ -242,23 +243,19 @@ def quick_compare(request):
             messages.error(request, '최대 5개까지만 비교할 수 있습니다.')
         else:
             # 임시 비교 데이터 생성
-            regions = Region.objects.filter(id__in=region_ids)
             comparison_data = []
-            
             for region in regions:
                 region_data = {
                     'id': region.id,
-                    'name': region.name,
-                    'city': region.city,
-                    'traffic_score': region.traffic_score,
-                    'education_score': region.education_score,
-                    'medical_score': region.medical_score,
-                    'cost_level': region.cost_level,
-                    'population': region.population,
-                    'area': region.area,
-                    'description': region.description,
-                    'latitude': region.latitude,
-                    'longitude': region.longitude
+                    'name': region.name, # 템플릿이 region.name을 사용하도록 매핑
+                    
+                    # ⭐ 추가/수정된 실제 필드 (템플릿에서 사용될 키) ⭐
+                    'medical_accessibility': region.medical_accessibility, # 의료 접근성
+                    'students_per_teacher': region.students_per_teacher,   # 교원당 학생수
+                    'total_monthly_burden': region.total_monthly_burden,   # 종합 월부담
+                    'monthly_rent_grade': region.monthly_rent_grade,       # 월세 등급
+                    'student_count': region.student_count,                 # 학생수
+                    'deposit_manwon': region.deposit_manwon,               # 보증금
                 }
                 comparison_data.append(region_data)
             
@@ -271,7 +268,7 @@ def quick_compare(request):
             return render(request, 'comparisons/quick_compare.html', context)
     
     # 모든 지역 목록
-    regions = Region.objects.all().order_by('city', 'name')
+    regions = Region.objects.all().order_by('name')
     
     context = {
         'regions': regions

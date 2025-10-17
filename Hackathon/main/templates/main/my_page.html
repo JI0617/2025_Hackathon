@@ -48,24 +48,27 @@
             <div class="row">
               <div class="col-md-4 mb-3">
                 <div class="preference-item">
-                  <h6 class="text-primary">
-                    <i class="bi bi-bus-front"></i> 교통 중요도
-                  </h6>
-                  <div class="progress mb-2">
-                    <div class="progress-bar bg-success" style="width: {{ preferences.traffic_importance|floatformat:0 }}%"></div>
-                  </div>
-                  <span class="badge bg-success">{{ preferences.traffic_importance }}점</span>
-                </div>
-              </div>
-              <div class="col-md-4 mb-3">
-                <div class="preference-item">
                   <h6 class="text-info">
                     <i class="bi bi-mortarboard"></i> 교육 중요도
                   </h6>
-                  <div class="progress mb-2">
-                    <div class="progress-bar bg-info" style="width: {{ preferences.education_importance|floatformat:0 }}%"></div>
-                  </div>
-                  <span class="badge bg-info">{{ preferences.education_importance }}점</span>
+                  {% with pref=preferences.education_importance %}
+                    {% if pref == 3 %}
+                      <div class="progress mb-2">
+                        <div class="progress-bar bg-info" style="width:100%;"></div>
+                      </div>
+                      <span class="badge bg-info">상</span>
+                    {% elif pref == 2 %}
+                      <div class="progress mb-2">
+                        <div class="progress-bar bg-info" style="width:66%;"></div>
+                      </div>
+                      <span class="badge bg-info">중</span>
+                    {% else %}
+                      <div class="progress mb-2">
+                        <div class="progress-bar bg-info" style="width:33%;"></div>
+                      </div>
+                      <span class="badge bg-info">하</span>
+                    {% endif %}
+                  {% endwith %}
                 </div>
               </div>
               <div class="col-md-4 mb-3">

@@ -7,6 +7,7 @@ dataset/
 ko_new.txt
 .env
 /real
+migrations/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

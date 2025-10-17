@@ -45,10 +45,10 @@
             
             <ul class="list-unstyled">
               <li class="mb-1">
-                <i class="bi bi-bus-front text-success"></i> 교통: {{ region.traffic_score }}점
+                <i class="bi bi-mortarboard text-info"></i> 교육: {{ region.education_score }}점
               </li>
               <li class="mb-1">
-                <i class="bi bi-mortarboard text-info"></i> 교육: {{ region.education_score }}점
+                <i class="bi bi-hospital text-danger"></i> 의료: {{ region.medical_score|floatformat:0 }}점
               </li>
               <li class="mb-1">
                 <i class="bi bi-currency-dollar text-warning"></i> 생활비: {{ region.cost_level }}

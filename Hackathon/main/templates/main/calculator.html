@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}생활비 계산기{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header"><h4><i class="bi bi-calculator"></i> 생활비 계산기</h4></div>
+        <div class="card-body">
+          <p class="text-muted">간단한 생활비 계산기입니다. 입력한 보증금/월세를 기반으로 월간 부담을 계산합니다.</p>
+          <form id="calcForm">
+            <div class="mb-3">
+              <label class="form-label">보증금 (만원)</label>
+              <input type="number" step="0.01" class="form-control" id="deposit" value="0">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">월세 (만원)</label>
+              <input type="number" step="0.01" class="form-control" id="rent" value="0">
+            </div>
+            <div class="d-grid gap-2">
+              <button type="button" class="btn btn-primary" onclick="calculate()">계산</button>
+            </div>
+          </form>
+          <div class="mt-3">
+            <h5>결과</h5>
+            <p id="resultText">—</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function calculate() {
+  const deposit = parseFloat(document.getElementById('deposit').value) || 0;
+  const rent = parseFloat(document.getElementById('rent').value) || 0;
+  // 단순 계산: 월부담 = 월세 + (보증금/1200)  (예: 10년 분할 기준으로 계산)
+  const monthlyFromDeposit = deposit / 1200.0;
+  const total = rent + monthlyFromDeposit;
+  document.getElementById('resultText').textContent = `예상 월 부담: ${total.toFixed(2)}만원 (월세 ${rent}만원 + 보증금 분할 ${monthlyFromDeposit.toFixed(2)}만원)`;
+}
+</script>
+{% endblock %}

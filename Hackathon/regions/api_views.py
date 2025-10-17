@@ -11,8 +11,8 @@ class RegionViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['city', 'cost_level']
     search_fields = ['name', 'city', 'description']
-    ordering_fields = ['traffic_score', 'education_score', 'medical_score', 'population']
-    ordering = ['-traffic_score']
+    ordering_fields = ['education_score', 'medical_score', 'population']
+    ordering = ['-education_score']
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
@@ -45,6 +45,6 @@ class RegionViewSet(viewsets.ReadOnlyModelViewSet):
         except ValueError:
             limit = 10
             
-        regions = Region.objects.all().order_by('-traffic_score')[:limit]
+        regions = Region.objects.all().order_by('-education_score')[:limit]
         serializer = self.get_serializer(regions, many=True)
         return Response(serializer.data)

@@ -45,33 +45,19 @@
         <form id="recommendationForm" style="pointer-events: auto;">
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label for="trafficWeight" class="form-label">교통 편의성 중요도</label>
-              <select class="form-select" id="trafficWeight" name="traffic_weight" style="pointer-events: auto;">
-                <option value="1">매우 중요</option>
-                <option value="2">중요</option>
-                <option value="3" selected>보통</option>
-                <option value="4">덜 중요</option>
-                <option value="5">전혀 중요하지 않음</option>
-              </select>
-            </div>
-            <div class="col-md-6 mb-3">
               <label for="educationWeight" class="form-label">교육 환경 중요도</label>
               <select class="form-select" id="educationWeight" name="education_weight" style="pointer-events: auto;">
-                <option value="1">매우 중요</option>
-                <option value="2">중요</option>
-                <option value="3" selected>보통</option>
-                <option value="4">덜 중요</option>
-                <option value="5">전혀 중요하지 않음</option>
+                <option value="상">중요</option>
+                <option value="중" selected>보통</option>
+                <option value="하">덜 중요</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">
               <label for="medicalWeight" class="form-label">의료 서비스 중요도</label>
               <select class="form-select" id="medicalWeight" name="medical_weight" style="pointer-events: auto;">
-                <option value="1">매우 중요</option>
-                <option value="2">중요</option>
-                <option value="3" selected>보통</option>
-                <option value="4">덜 중요</option>
-                <option value="5">전혀 중요하지 않음</option>
+                <option value="상">중요</option>
+                <option value="중" selected>보통</option>
+                <option value="하">덜 중요</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">
@@ -310,15 +296,6 @@
           <div class="row g-2 mb-3">
             <div class="col-6">
               <div class="d-flex align-items-center">
-                <i class="bi bi-bus-front text-success me-2"></i>
-                <div>
-                  <small class="text-muted d-block">교통</small>
-                  <strong>{{ region.traffic_score }}점</strong>
-                </div>
-              </div>
-            </div>
-            <div class="col-6">
-              <div class="d-flex align-items-center">
                 <i class="bi bi-mortarboard text-info me-2"></i>
                 <div>
                   <small class="text-muted d-block">교육</small>
@@ -466,6 +443,8 @@
 </div>
 
 <script>
+// expose preferences URL to JS (safe place)
+const preferencesUrl = "{% url 'preferences' %}";
 document.addEventListener('DOMContentLoaded', function() {
     // 시/도별 인구 분포 차트
     const ctx = document.getElementById('populationDistributionChart').getContext('2d');
@@ -560,7 +539,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 city: "{{ region.city }}",
                 lat: {{ region.latitude }},
                 lng: {{ region.longitude }},
-                traffic: {{ region.traffic_score }},
                 education: {{ region.education_score }},
                 medical: {{ region.medical_score }},
                 cost: "{{ region.cost_level }}",
@@ -575,8 +553,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 각 지역에 마커 추가
         regions.forEach(region => {
-            const avgScore = Math.round((region.traffic + region.education + region.medical) / 3);
-            const color = getMarkerColor(region.traffic);
+            const avgScore = Math.round((region.education + region.medical) / 3);
+            // const color = getMarkerColor(region.traffic);
             
             // 커스텀 아이콘 생성
             const customIcon = L.divIcon({
@@ -612,10 +590,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p style="margin: 0 0 5px 0; font-size: 12px; color: #666;">${region.city}</p>
                     <div style="margin: 8px 0;">
                         <div style="display: flex; justify-content: space-between; margin: 2px 0;">
-                            <span style="font-size: 11px;">교통:</span>
-                            <span style="font-size: 11px; font-weight: bold;">${region.traffic}점</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin: 2px 0;">
                             <span style="font-size: 11px;">교육:</span>
                             <span style="font-size: 11px; font-weight: bold;">${region.education}점</span>
                         </div>
@@ -629,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     <div style="margin-top: 8px; text-align: center;">
-                        <a href="/regions/${region.name}/" style="font-size: 11px; color: #007bff; text-decoration: none;">상세보기 →</a>
+                        <a href="/region/${encodeURIComponent(region.name)}/" style="font-size: 11px; color: #007bff; text-decoration: none;">상세보기 →</a>
                     </div>
                 </div>
             `;
@@ -804,11 +778,81 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 간단한 추천 기능 (testRecommendation은 전역으로 이동됨)
 
-    function getRecommendations() {
-        alert('모달 추천 버튼 클릭됨!');
-        document.getElementById('recommendationResults').style.display = 'block';
-        document.getElementById('recommendedRegions').innerHTML = '<div class="col-12"><div class="alert alert-primary"><h5>추천 결과</h5><p>강남구, 송파구, 수원시가 추천되었습니다!</p></div></div>';
-    }
+  function getRecommendations() {
+    // Read modal form values and map 상/중/하 -> 3/2/1
+    const mapImportance = (val) => {
+      if (!val) return 2; // default 중
+      if (val === '상') return 3;
+      if (val === '중') return 2;
+      if (val === '하') return 1;
+      return parseInt(val) || 2;
+    };
+
+    const education = document.getElementById('educationWeight')?.value;
+    const medical = document.getElementById('medicalWeight')?.value;
+    const costPref = document.getElementById('costPreference')?.value;
+    const cityPref = document.getElementById('cityPreference')?.value;
+    const minScore = document.getElementById('minScore')?.value;
+
+    const education_weight = mapImportance(education);
+    const medical_weight = mapImportance(medical);
+    const cost_weight = mapImportance(document.getElementById('minScore')?.value); // fallback
+
+    // Show loading state
+    document.getElementById('recommendationResults').style.display = 'block';
+    const recommendedRegionsDiv = document.getElementById('recommendedRegions');
+    recommendedRegionsDiv.innerHTML = '<div class="col-12"><div class="text-center"><div class="spinner-border text-warning" role="status"><span class="visually-hidden">로딩중...</span></div><p class="mt-2">추천 지역을 찾고 있습니다...</p></div></div>';
+
+    // Build query string
+    const params = new URLSearchParams();
+    params.set('education_weight', education_weight);
+    params.set('medical_weight', medical_weight);
+    params.set('cost_preference', costPref || 'medium');
+    if (cityPref) params.set('city_preference', cityPref);
+    if (minScore) params.set('min_score', minScore);
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    fetch('/api/recommendations/?' + params.toString(), {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: {
+        'X-CSRFToken': csrfToken,
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.text().then(txt => {
+          console.error('추천 API 응답 오류', response.status, txt);
+          throw new Error('서버 응답 오류: ' + response.status);
+        });
+      }
+      const ct = response.headers.get('content-type') || '';
+      if (ct.includes('application/json')) return response.json();
+      return response.text().then(txt => {
+        try { return JSON.parse(txt); }
+        catch (e) { console.error('추천 API가 JSON을 반환하지 않았습니다:', txt); throw e; }
+      });
+    })
+    .then(data => {
+      if (data && data.success && data.recommendations) {
+        displayRecommendations(data.recommendations);
+        // ensure modal closes
+        const modalEl = document.getElementById('recommendationModal');
+        if (modalEl) {
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+        }
+      } else {
+        // show fallback with link to preferences
+        recommendedRegionsDiv.innerHTML = '<div class="col-12"><div class="alert alert-warning"><h5>추천 결과 없음</h5><p>선호도를 먼저 설정해주세요.</p><a href="' + preferencesUrl + '" class="btn btn-primary">선호도 설정</a></div></div>';
+      }
+    })
+    .catch(error => {
+      console.error('추천 데이터 로딩 실패:', error);
+      recommendedRegionsDiv.innerHTML = '<div class="col-12"><div class="alert alert-danger"><h5>오류 발생</h5><p>추천 시스템에 문제가 발생했습니다. 콘솔을 확인해주세요.</p></div></div>';
+    });
+  }
     
 });
 
@@ -827,29 +871,35 @@ function showRecommendations() {
     
     // AJAX로 추천 데이터 가져오기
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-    fetch('/api/recommendations/', {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => {
-        console.log('API 응답 상태:', response.status);
-        return response.json();
-    })
-    .then(data => {
-        console.log('API 응답 데이터:', data);
-        if (data.success && data.recommendations) {
-            displayRecommendations(data.recommendations);
-        } else {
-            cardsDiv.innerHTML = '<div class="col-12"><div class="alert alert-warning"><h5>추천 결과 없음</h5><p>선호도를 먼저 설정해주세요.</p><a href="/preferences/" class="btn btn-primary">선호도 설정</a></div></div>';
-        }
-    })
-    .catch(error => {
-        console.error('추천 데이터 로딩 실패:', error);
-        cardsDiv.innerHTML = '<div class="col-12"><div class="alert alert-danger"><h5>오류 발생</h5><p>추천 시스템에 문제가 발생했습니다. 콘솔을 확인해주세요.</p></div></div>';
-    });
+  fetch('/api/recommendations/', {
+    method: 'GET',
+    credentials: 'same-origin',
+    headers: {
+      'X-CSRFToken': csrfToken,
+      'Content-Type': 'application/json',
+    }
+  })
+  .then(response => {
+    console.log('API 응답 상태:', response.status);
+    if (!response.ok) {
+      return response.text().then(txt => { console.error('추천 API 응답 오류', response.status, txt); throw new Error('서버 오류'); });
+    }
+    const ct = response.headers.get('content-type') || '';
+    if (ct.includes('application/json')) return response.json();
+    return response.text().then(txt => { try { return JSON.parse(txt); } catch(e) { console.error('Non-JSON response', txt); throw e; } });
+  })
+  .then(data => {
+    console.log('API 응답 데이터:', data);
+    if (data && data.success && data.recommendations) {
+      displayRecommendations(data.recommendations);
+    } else {
+      cardsDiv.innerHTML = '<div class="col-12"><div class="alert alert-warning"><h5>추천 결과 없음</h5><p>선호도를 먼저 설정해주세요.</p><a href="' + preferencesUrl + '" class="btn btn-primary">선호도 설정</a></div></div>';
+    }
+  })
+  .catch(error => {
+    console.error('추천 데이터 로딩 실패:', error);
+    cardsDiv.innerHTML = '<div class="col-12"><div class="alert alert-danger"><h5>오류 발생</h5><p>추천 시스템에 문제가 발생했습니다. 콘솔을 확인해주세요.</p></div></div>';
+  });
 }
 
 function displayRecommendations(recommendations) {
@@ -870,10 +920,10 @@ function displayRecommendations(recommendations) {
                         
                         <ul class="list-unstyled">
                             <li class="mb-1">
-                                <i class="bi bi-bus-front text-success"></i> 교통: ${region.traffic_score}점
+                                <i class="bi bi-mortarboard text-info"></i> 교육: ${region.education_score}점
                             </li>
                             <li class="mb-1">
-                                <i class="bi bi-mortarboard text-info"></i> 교육: ${region.education_score}점
+                                <i class="bi bi-mortarboard text-info"></i> 의료: ${region.medical_score}점
                             </li>
                             <li class="mb-1">
                                 <i class="bi bi-currency-dollar text-warning"></i> 생활비: ${region.cost_level}
@@ -885,9 +935,9 @@ function displayRecommendations(recommendations) {
                             <a href="/regions/${region.name}/" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i> 자세히 보기
                             </a>
-                            <a href="/reviews/add/${region.name}/" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-chat"></i> 리뷰
-                            </a>
+              <a href="/region/${encodeURIComponent(region.name)}/review/" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-chat"></i> 리뷰
+              </a>
                         </div>
                     </div>
                 </div>

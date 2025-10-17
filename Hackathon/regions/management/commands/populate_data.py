@@ -1,191 +1,147 @@
 from django.core.management.base import BaseCommand
-from django.contrib.auth.models import User
-from regions.models import Region, News
+from django.db.models import Min, Max, F, ExpressionWrapper, DecimalField
+from regions.models import Region
+from decimal import Decimal
+import csv
+import os
 
 class Command(BaseCommand):
-    help = 'Populate database with sample data'
+    help = 'Populate Region table from 통합_테이블.csv and calculate 0-100 scores.'
 
-    def handle(self, *args, **options):
-        self.stdout.write('Creating sample data...')
+    def calculate_scores(self):
+        """
+        데이터베이스에 저장된 모든 Region 데이터를 기반으로
+        50-100점 스케일 점수를 계산하여 일괄 업데이트합니다.
+        """
+        self.stdout.write(self.style.SUCCESS("--- 2. 전체 데이터 기반 50-100점 스케일 계산 시작 ---"))
+
+        # 1. 전체 데이터셋의 최소/최대값 조회 (Aggregation)
+        stats = Region.objects.aggregate(
+            min_med=Min('medical_accessibility'), max_med=Max('medical_accessibility'),
+            min_edu=Min('students_per_teacher'), max_edu=Max('students_per_teacher'),
+            min_cost=Min('total_monthly_burden'), max_cost=Max('total_monthly_burden')
+        )
         
-        # Create sample regions
-        regions_data = [
-            {
-                'name': '청주시',
-                'traffic_score': 85,
-                'education_score': 90,
-                'cost_level': '보통',
-                'population': 850000,
-                'area': 940.0,
-                'description': '충청북도의 도청 소재지로, 교통과 교육이 발달한 도시입니다. 중부권의 중심지로서 다양한 편의시설을 갖추고 있습니다.'
-            },
-            {
-                'name': '충주시',
-                'traffic_score': 70,
-                'education_score': 80,
-                'cost_level': '낮음',
-                'population': 210000,
-                'area': 983.0,
-                'description': '자연환경이 우수하고 생활비가 저렴한 도시입니다. 교육환경도 양호하며, 주거하기 좋은 환경을 제공합니다.'
-            },
-            {
-                'name': '제천시',
-                'traffic_score': 65,
-                'education_score': 75,
-                'cost_level': '낮음',
-                'population': 140000,
-                'area': 882.0,
-                'description': '자연과 도시가 조화를 이룬 도시로, 관광지로도 유명합니다. 생활비가 저렴하고 교육환경도 양호합니다.'
-            },
-            {
-                'name': '보은군',
-                'traffic_score': 50,
-                'education_score': 60,
-                'cost_level': '매우낮음',
-                'population': 35000,
-                'area': 584.0,
-                'description': '자연환경이 우수하고 생활비가 매우 저렴한 지역입니다. 조용하고 평화로운 생활을 원하는 분들에게 적합합니다.'
-            },
-            {
-                'name': '옥천군',
-                'traffic_score': 60,
-                'education_score': 70,
-                'cost_level': '낮음',
-                'population': 55000,
-                'area': 537.0,
-                'description': '충청북도 중부에 위치한 군으로, 교통이 비교적 편리하고 생활비가 저렴합니다.'
-            },
-            {
-                'name': '영동군',
-                'traffic_score': 55,
-                'education_score': 65,
-                'cost_level': '낮음',
-                'population': 45000,
-                'area': 845.0,
-                'description': '자연환경이 우수하고 생활비가 저렴한 지역입니다. 조용한 생활을 원하는 분들에게 적합합니다.'
-            },
-            {
-                'name': '증평군',
-                'traffic_score': 75,
-                'education_score': 85,
-                'cost_level': '보통',
-                'population': 35000,
-                'area': 81.0,
-                'description': '면적이 작지만 교통이 편리하고 교육환경이 우수한 지역입니다. 청주시와 인접해 있어 편의시설 이용이 용이합니다.'
-            },
-            {
-                'name': '진천군',
-                'traffic_score': 70,
-                'education_score': 80,
-                'cost_level': '낮음',
-                'population': 65000,
-                'area': 407.0,
-                'description': '교통이 편리하고 교육환경이 양호한 지역입니다. 생활비도 저렴하여 주거하기 좋은 환경을 제공합니다.'
-            },
-            {
-                'name': '괴산군',
-                'traffic_score': 45,
-                'education_score': 55,
-                'cost_level': '매우낮음',
-                'population': 35000,
-                'area': 842.0,
-                'description': '자연환경이 우수하고 생활비가 매우 저렴한 지역입니다. 조용하고 평화로운 생활을 원하는 분들에게 적합합니다.'
-            },
-            {
-                'name': '음성군',
-                'traffic_score': 65,
-                'education_score': 75,
-                'cost_level': '낮음',
-                'population': 95000,
-                'area': 520.0,
-                'description': '교통이 비교적 편리하고 생활비가 저렴한 지역입니다. 교육환경도 양호하여 주거하기 좋은 환경을 제공합니다.'
-            }
-        ]
+        # 2. 정규화 공식 적용을 위한 범위 정의
+        med_range = Decimal(stats['max_med'] - stats['min_med'])
+        med_min = Decimal(stats['min_med'])
+        edu_range = Decimal(stats['max_edu'] - stats['min_edu'])
+        edu_min = Decimal(stats['min_edu'])
+        cost_range = Decimal(stats['max_cost'] - stats['min_cost'])
+        cost_min = Decimal(stats['min_cost'])
+
+        # 3. Django ORM Expression을 사용하여 점수 계산 및 일괄 업데이트
         
-        for region_data in regions_data:
-            region, created = Region.objects.get_or_create(
-                name=region_data['name'],
-                defaults=region_data
+        # (A) 의료 점수: medical_accessibility(접근성)은 높을수록 점수가 높음
+        if med_range > 0:
+            # Score = 50 + 50 * ((X - Min) / Range)
+            med_score_expr = 50 + 50 * ((F('medical_accessibility') - med_min) / med_range)
+            Region.objects.update(
+                medical_score=ExpressionWrapper(med_score_expr, output_field=DecimalField(max_digits=5, decimal_places=2))
             )
-            if created:
-                self.stdout.write(f'Created region: {region.name}')
-            else:
-                self.stdout.write(f'Region already exists: {region.name}')
+            self.stdout.write(self.style.SUCCESS("  > 의료 점수 계산 완료 (높을수록 좋음)."))
         
-        # Create sample news
-        news_data = [
-            {
-                'title': '청주시 교통 인프라 대폭 개선',
-                'content': '청주시에서 교통 인프라 개선 사업이 본격적으로 시작되었습니다. 주요 도로 확장과 대중교통 시스템 개선으로 교통 편의성이 크게 향상될 것으로 예상됩니다.',
-                'region': Region.objects.get(name='청주시'),
-                'is_featured': True
-            },
-            {
-                'title': '충주시 교육 시설 현대화 완료',
-                'content': '충주시의 주요 교육 시설 현대화 사업이 완료되었습니다. 최신 교육 장비와 시설이 도입되어 교육 환경이 크게 개선되었습니다.',
-                'region': Region.objects.get(name='충주시'),
-                'is_featured': True
-            },
-            {
-                'title': '제천시 관광 인프라 확충',
-                'content': '제천시에서 관광 인프라 확충 사업이 진행 중입니다. 새로운 관광지 개발과 기존 시설 개선으로 관광객 유치가 증가할 것으로 예상됩니다.',
-                'region': Region.objects.get(name='제천시'),
-                'is_featured': True
-            },
-            {
-                'title': '보은군 생활 환경 개선 사업',
-                'content': '보은군에서 주민 생활 환경 개선 사업이 시작되었습니다. 도로 정비와 공원 조성 등으로 주민들의 삶의 질이 향상될 것으로 기대됩니다.',
-                'region': Region.objects.get(name='보은군'),
-                'is_featured': False
-            },
-            {
-                'title': '옥천군 교통 편의성 향상',
-                'content': '옥천군의 교통 편의성이 크게 향상되었습니다. 새로운 버스 노선 개설과 도로 정비로 주민들의 이동이 더욱 편리해졌습니다.',
-                'region': Region.objects.get(name='옥천군'),
-                'is_featured': False
-            },
-            {
-                'title': '영동군 교육 환경 개선',
-                'content': '영동군의 교육 환경이 개선되었습니다. 학교 시설 현대화와 교육 프로그램 확충으로 학생들의 학습 환경이 향상되었습니다.',
-                'region': Region.objects.get(name='영동군'),
-                'is_featured': False
-            },
-            {
-                'title': '증평군 교통망 확충',
-                'content': '증평군의 교통망이 확충되었습니다. 새로운 도로 개설과 대중교통 시스템 개선으로 교통 편의성이 크게 향상되었습니다.',
-                'region': Region.objects.get(name='증평군'),
-                'is_featured': False
-            },
-            {
-                'title': '진천군 생활 편의시설 확충',
-                'content': '진천군에 새로운 생활 편의시설들이 들어서고 있습니다. 상업시설과 문화시설 확충으로 주민들의 생활이 더욱 편리해졌습니다.',
-                'region': Region.objects.get(name='진천군'),
-                'is_featured': False
-            },
-            {
-                'title': '괴산군 자연환경 보호 사업',
-                'content': '괴산군에서 자연환경 보호 사업이 진행 중입니다. 생태계 보호와 자연 경관 개선으로 지역의 자연환경이 더욱 아름다워졌습니다.',
-                'region': Region.objects.get(name='괴산군'),
-                'is_featured': False
-            },
-            {
-                'title': '음성군 주거 환경 개선',
-                'content': '음성군의 주거 환경이 개선되었습니다. 주택 시설 현대화와 주거지 정비로 주민들의 삶의 질이 향상되었습니다.',
-                'region': Region.objects.get(name='음성군'),
-                'is_featured': False
-            }
-        ]
-        
-        for news_data_item in news_data:
-            news, created = News.objects.get_or_create(
-                title=news_data_item['title'],
-                defaults=news_data_item
+        # (B) 교육 점수: students_per_teacher(학생수)는 높을수록 점수가 높음
+        # (원래는 낮을수록 좋지만, 요청에 따라 높을수록 좋도록 수정)
+        if edu_range > 0:
+            # Score = 50 + 50 * ((X - Min) / Range)
+            edu_score_expr = 50 + 50 * ((F('students_per_teacher') - edu_min) / edu_range)
+            Region.objects.update(
+                education_score=ExpressionWrapper(edu_score_expr, output_field=DecimalField(max_digits=5, decimal_places=2))
             )
-            if created:
-                self.stdout.write(f'Created news: {news.title}')
-            else:
-                self.stdout.write(f'News already exists: {news.title}')
+            self.stdout.write(self.style.SUCCESS("  > 교육 점수 계산 완료 (높을수록 좋음)."))
+            
+        # (C) 생활비 점수: total_monthly_burden(부담)은 낮을수록 점수가 높음 (역방향 유지)
+        if cost_range > 0:
+            # Score = 50 + 50 * (1 - ((X - Min) / Range))
+            cost_score_expr = 50 + 50 * (1 - (F('total_monthly_burden') - cost_min) / cost_range)
+            Region.objects.update(
+                cost_score=ExpressionWrapper(cost_score_expr, output_field=DecimalField(max_digits=5, decimal_places=2))
+            )
+            self.stdout.write(self.style.SUCCESS("  > 생활비 점수 계산 완료 (낮을수록 좋음)."))
         
-        self.stdout.write(
-            self.style.SUCCESS('Successfully populated database with sample data')
-        ) 
+        self.stdout.write(self.style.SUCCESS("--- 50-100점 스케일 DB 업데이트 최종 완료. ---"))
+
+
+    def handle(self, *args, **kwargs):
+        # 1. 데이터 로드 및 초기 저장 (경로는 이전 요청 그대로 유지)
+        csv_file_path = 'c:/Users/user/Documents/2025_Hackathon/Data/통합_테이블.csv'
+        
+        if not os.path.exists(csv_file_path):
+             self.stdout.write(self.style.ERROR(f"CSV 파일을 찾을 수 없습니다: {csv_file_path}"))
+             return
+
+        self.stdout.write(self.style.SUCCESS('--- 1. CSV 데이터 로드 및 Region 모델 초기 저장 시작 ---'))
+        Region.objects.all().delete() # 기존 데이터 초기화
+
+        try:
+            with open(csv_file_path, encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                
+                # CSV 헤더 확인 및 매핑
+                REGION_NAME_KEY = '\ufeff지역명' if '\ufeff지역명' in reader.fieldnames else '지역명'
+                
+                for i, row in enumerate(reader):
+                    # 데이터 타입 변환 및 모델 필드명과 CSV 컬럼명 매핑
+                    Region.objects.create(
+                        name=row[REGION_NAME_KEY],
+                        medical_accessibility=float(row['의료 평균접근성']),
+                        student_count=int(row['학생수']),
+                        teacher_count=int(row['교원수']),
+                        students_per_teacher=float(row['교원 1인당 학생수']),
+                        deposit_manwon=Decimal(row['보증금(만원)']),
+                        monthly_rent_manwon=Decimal(row['월세금(만원)']),
+                        total_monthly_burden=Decimal(row['종합월부담']),
+                        total_burden_grade=row['종합부담등급'],
+                        medical_grade=row['의료 등급'],
+                        education_infra_grade=row['교육 인프라 등급'],
+                        monthly_rent_grade=row['월세등급'],
+                        summary=row['summary']
+                    )
+                    if (i + 1) % 100 == 0:
+                         self.stdout.write(f"  > {i + 1}개 지역 로드 완료...")
+
+                self.stdout.write(self.style.SUCCESS(f"  > 총 {Region.objects.count()}개 지역 초기 로드 완료."))
+                
+        except KeyError as e:
+            self.stdout.write(self.style.ERROR(f'KeyError: {e} - CSV 컬럼명을 확인해 주세요.'))
+            self.stdout.write(f'CSV 컬럼명: {reader.fieldnames}')
+            return
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"데이터 로드 중 오류 발생: {e}"))
+            return
+            
+        # 4. 데이터 로드가 완료된 후, 점수 계산 함수 실행
+        self.calculate_scores()
+
+# from django.core.management.base import BaseCommand
+# import csv
+# from regions.models import Region
+
+# class Command(BaseCommand):
+#     help = 'Populate Region table from 통합_테이블.csv'
+
+#     def handle(self, *args, **kwargs):
+#         with open('c:/Users/user/Documents/2025_Hackathon/Data/통합_테이블.csv', encoding='utf-8') as f:
+#             reader = csv.DictReader(f)
+#             print('CSV 컬럼명:', reader.fieldnames)
+#             for row in reader:
+#                 try:
+#                     Region.objects.create(
+#                         지역명=row['\ufeff지역명'],
+#                         의료_평균접근성=row['의료 평균접근성'],
+#                         학생수=row['학생수'],
+#                         교원수=row['교원수'],
+#                         교원_1인당_학생수=row['교원 1인당 학생수'],
+#                         보증금_만원=row['보증금(만원)'],
+#                         월세금_만원=row['월세금(만원)'],
+#                         종합월부담=row['종합월부담'],
+#                         종합부담등급=row['종합부담등급'],
+#                         의료_등급=row['의료 등급'],
+#                         교육_인프라_등급=row['교육 인프라 등급'],
+#                         월세등급=row['월세등급'],
+#                         summary=row['summary']
+#                     )
+#                 except KeyError as e:
+#                     print(f'KeyError: {e}. row keys: {list(row.keys())}')
+#                     raise

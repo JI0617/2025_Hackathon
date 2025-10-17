@@ -41,17 +41,6 @@
                     <td>
                       <div class="d-flex align-items-center">
                         <div class="progress me-2" style="width: 60px; height: 20px;">
-                          <div class="progress-bar" role="progressbar" 
-                               style="width: {% widthratio region.traffic_score 10 100 %}%">
-                            {{ region.traffic_score }}
-                          </div>
-                        </div>
-                        <span class="fw-bold">{{ region.traffic_score }}점</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <div class="progress me-2" style="width: 60px; height: 20px;">
                           <div class="progress-bar bg-success" role="progressbar" 
                                style="width: {% widthratio region.education_score 10 100 %}%">
                             {{ region.education_score }}
@@ -113,16 +102,6 @@
     <div class="col-md-4">
       <div class="card">
         <div class="card-header">
-          <h6><i class="bi bi-bus-front"></i> 교통 점수</h6>
-        </div>
-        <div class="card-body">
-          <canvas id="trafficChart" width="400" height="200"></canvas>
-                        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-header">
           <h6><i class="bi bi-book"></i> 교육 점수</h6>
         </div>
         <div class="card-body">
@@ -152,7 +131,7 @@
         <div class="card-body">
           <div class="row">
             {% for region in comparison_data %}
-              {% with total_score=region.traffic_score|add:region.education_score|add:region.medical_score %}
+              {% with total_score=region.education_score|add:region.medical_score %}
                 <div class="col-md-4 mb-3">
                   <div class="card h-100">
                     <div class="card-body text-center">
@@ -162,10 +141,6 @@
                         <span class="badge bg-primary">총점: {{ total_score }}/30</span>
                       </div>
                       <div class="row text-center">
-                        <div class="col-4">
-                          <small class="text-muted">교통</small><br>
-                          <strong>{{ region.traffic_score }}</strong>
-                        </div>
                         <div class="col-4">
                           <small class="text-muted">교육</small><br>
                           <strong>{{ region.education_score }}</strong>
@@ -245,31 +220,6 @@
 // 차트 생성
 {% if comparison_data %}
 const regions = {{ comparison_data|safe }};
-
-// 교통 점수 차트
-const trafficCtx = document.getElementById('trafficChart').getContext('2d');
-new Chart(trafficCtx, {
-  type: 'bar',
-  data: {
-    labels: regions.map(r => r.name),
-    datasets: [{
-      label: '교통 점수',
-      data: regions.map(r => r.traffic_score),
-      backgroundColor: 'rgba(54, 162, 235, 0.8)',
-      borderColor: 'rgba(54, 162, 235, 1)',
-      borderWidth: 1
-    }]
-  },
-  options: {
-    responsive: true,
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 10
-      }
-    }
-  }
-});
 
 // 교육 점수 차트
 const educationCtx = document.getElementById('educationChart').getContext('2d');

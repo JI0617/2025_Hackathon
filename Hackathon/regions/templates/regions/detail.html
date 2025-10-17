@@ -30,21 +30,6 @@
               <div class="col-md-8">
                 <div class="row">
                   <div class="col-md-6 mb-3">
-                    <div class="card border-success">
-                      <div class="card-body text-center">
-                        <i class="bi bi-bus-front text-success fs-1"></i>
-                        <h5 class="mt-2">교통</h5>
-                        <div class="progress mb-2" style="height: 20px;">
-                          <div class="progress-bar bg-success" role="progressbar" 
-                               style="width: {% widthratio region.traffic_score 10 100 %}%">
-                            {{ region.traffic_score }}점
-                          </div>
-                        </div>
-                        <small class="text-muted">대중교통 편의성</small>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-6 mb-3">
                     <div class="card border-info">
                       <div class="card-body text-center">
                         <i class="bi bi-mortarboard text-info fs-1"></i>
@@ -104,18 +89,6 @@
         
         <!-- 상세 점수 정보 -->
         <div class="row">
-          <div class="col-md-6">
-            <h5><i class="bi bi-bus-front text-success"></i> 교통 정보</h5>
-            <div class="mb-3">
-              <div class="d-flex justify-content-between">
-                <span>교통 점수</span>
-                <span class="fw-bold">{{ region.traffic_score }}점</span>
-              </div>
-              <div class="progress">
-                <div class="progress-bar bg-success" style="width: {% widthratio region.traffic_score 10 100 %}%"></div>
-              </div>
-            </div>
-          </div>
           <div class="col-md-6">
             <h5><i class="bi bi-mortarboard text-info"></i> 교육 정보</h5>
             <div class="mb-3">
@@ -304,12 +277,6 @@
       <div class="card-body">
         <div class="row text-center">
           <div class="col-6">
-            <div class="border-end">
-              <h4 class="text-primary">{{ region.traffic_score }}</h4>
-              <small class="text-muted">교통점수</small>
-            </div>
-          </div>
-          <div class="col-6">
             <h4 class="text-info">{{ region.education_score }}</h4>
             <small class="text-muted">교육점수</small>
           </div>
@@ -352,7 +319,6 @@
         </div>
         <h6><i class="bi bi-geo-alt"></i> 주변 정보</h6>
         <ul class="list-unstyled">
-          <li><i class="bi bi-train-front text-primary"></i> 교통편: {{ region.traffic_score }}점</li>
           <li><i class="bi bi-book text-info"></i> 교육환경: {{ region.education_score }}점</li>
           <li><i class="bi bi-hospital text-danger"></i> 의료시설: {{ region.medical_score }}점</li>
         </ul>
@@ -416,7 +382,6 @@ function initMap() {
             <h6 style="margin: 0 0 5px 0;">{{ region.name }}</h6>
             <p style="margin: 0; font-size: 12px; color: #666;">{{ region.city }}</p>
             <div style="margin: 8px 0;">
-                <div style="font-size: 11px;">교통: {{ region.traffic_score }}점</div>
                 <div style="font-size: 11px;">교육: {{ region.education_score }}점</div>
                 <div style="font-size: 11px;">의료: {{ region.medical_score }}점</div>
             </div>
@@ -442,7 +407,6 @@ function createRadarChart() {
             datasets: [{
                 label: '{{ region.name }}',
                 data: [
-                    {{ region.traffic_score }},
                     {{ region.education_score }},
                     {{ region.medical_score }},
                     {% if region.cost_level == '매우낮음' %}9
