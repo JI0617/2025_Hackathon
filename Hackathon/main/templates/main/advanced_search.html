@@ -1,0 +1,483 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}고급 검색 - 지역 평가 서비스{% endblock %}
+
+{% block extra_head %}
+<style>
+    .filter-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+    }
+    
+    .filter-card {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(10px);
+    }
+    
+    .filter-card h6 {
+        color: #fff;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        padding-bottom: 0.5rem;
+    }
+    
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 8px;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        background: rgba(255, 255, 255, 1);
+        box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
+    }
+    
+    .btn-filter {
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        border-radius: 25px;
+        padding: 0.5rem 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-filter:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .saved-search-item {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .saved-search-item:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateX(5px);
+    }
+    
+    .region-card {
+        transition: all 0.3s ease;
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .region-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .search-results-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 페이지 헤더 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="text-center">
+                <h1 class="display-4 fw-bold text-primary mb-3">
+                    <i class="bi bi-search"></i> 고급 검색
+                </h1>
+                <p class="lead text-muted">다양한 조건으로 원하는 지역을 찾아보세요</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 검색 필터 -->
+        <div class="col-lg-4 mb-4">
+            <div class="filter-section">
+                <h4 class="fw-bold mb-4">
+                    <i class="bi bi-funnel"></i> 검색 필터
+                </h4>
+                
+                <form method="get" id="advancedSearchForm">
+                    <!-- 기본 검색 -->
+                    <div class="filter-card">
+                        <h6><i class="bi bi-search"></i> 기본 검색</h6>
+                        <div class="mb-3">
+                            {{ form.search_query }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.city }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.cost_level }}
+                        </div>
+                    </div>
+                    
+                    <!-- 점수 범위 -->
+                    <div class="filter-card">
+                        <h6><i class="bi bi-graph-up"></i> 점수 범위</h6>
+                        <div class="mb-3">
+                            {{ form.traffic_range }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.education_range }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.medical_range }}
+                        </div>
+                    </div>
+                    
+                    <!-- 지역 특성 -->
+                    <div class="filter-card">
+                        <h6><i class="bi bi-geo-alt"></i> 지역 특성</h6>
+                        <div class="mb-3">
+                            {{ form.population_range }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.area_range }}
+                        </div>
+                    </div>
+                    
+                    <!-- 리뷰 필터 -->
+                    <div class="filter-card">
+                        <h6><i class="bi bi-star"></i> 리뷰 필터</h6>
+                        <div class="form-check mb-3">
+                            {{ form.has_reviews }}
+                            <label class="form-check-label text-white" for="{{ form.has_reviews.id_for_label }}">
+                                {{ form.has_reviews.label }}
+                            </label>
+                        </div>
+                        <div class="mb-3">
+                            {{ form.min_rating }}
+                        </div>
+                    </div>
+                    
+                    <!-- 정렬 -->
+                    <div class="filter-card">
+                        <h6><i class="bi bi-sort-down"></i> 정렬</h6>
+                        <div class="mb-3">
+                            {{ form.sort_by }}
+                        </div>
+                    </div>
+                    
+                    <!-- 검색 버튼 -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-filter">
+                            <i class="bi bi-search"></i> 검색하기
+                        </button>
+                        <button type="button" class="btn btn-filter" onclick="clearFilters()">
+                            <i class="bi bi-arrow-clockwise"></i> 초기화
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- 저장된 검색 조건 -->
+            {% if user.is_authenticated and saved_searches %}
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-bookmark"></i> 저장된 검색
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for search in saved_searches %}
+                    <div class="saved-search-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ search.name }}</h6>
+                                {% if search.description %}
+                                <small class="text-muted">{{ search.description }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'load_saved_search' search.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-play"></i>
+                                </a>
+                                <a href="{% url 'delete_saved_search' search.id %}" class="btn btn-outline-danger btn-sm" 
+                                   onclick="return confirm('정말 삭제하시겠습니까?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- 검색 결과 -->
+        <div class="col-lg-8">
+            <!-- 검색 결과 헤더 -->
+            <div class="search-results-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-1">
+                            <i class="bi bi-list-check"></i> 검색 결과
+                        </h4>
+                        <p class="mb-0">총 {{ total_regions }}개의 지역이 검색되었습니다</p>
+                    </div>
+                    {% if user.is_authenticated %}
+                    <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#saveSearchModal">
+                        <i class="bi bi-bookmark-plus"></i> 검색 조건 저장
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- 지역 목록 -->
+            {% if regions %}
+            <div class="row">
+                {% for region in regions %}
+                <div class="col-md-6 mb-4 fade-in-up" style="animation-delay: {{ forloop.counter }}00ms;">
+                    <div class="card h-100 region-card">
+                        {% if region.image_url %}
+                        <img src="{{ region.image_url }}" class="card-img-top" alt="{{ region.name }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                        <div class="card-img-top bg-gradient d-flex align-items-center justify-content-center position-relative" style="height: 200px; background: linear-gradient(135deg, #667eea, #764ba2); overflow: hidden;">
+                            <!-- 지역별 특화 배경 이미지 -->
+                            {% if '서울' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #ff6b6b, #ffa726); opacity: 0.8;"></div>
+                            <i class="bi bi-building text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '부산' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #4fc3f7, #29b6f6); opacity: 0.8;"></div>
+                            <i class="bi bi-water text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '제주' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #66bb6a, #4caf50); opacity: 0.8;"></div>
+                            <i class="bi bi-tree text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '강원' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #81c784, #66bb6a); opacity: 0.8;"></div>
+                            <i class="bi bi-mountain text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '경기' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #ffb74d, #ff9800); opacity: 0.8;"></div>
+                            <i class="bi bi-house text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '충청' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #ba68c8, #ab47bc); opacity: 0.8;"></div>
+                            <i class="bi bi-flower1 text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '전라' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #ff8a65, #ff7043); opacity: 0.8;"></div>
+                            <i class="bi bi-sun text-white position-relative" style="font-size: 3rem;"></i>
+                            {% elif '경상' in region.city %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #a5d6a7, #81c784); opacity: 0.8;"></div>
+                            <i class="bi bi-geo-alt text-white position-relative" style="font-size: 3rem;"></i>
+                            {% else %}
+                            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, #667eea, #764ba2); opacity: 0.8;"></div>
+                            <i class="bi bi-geo-alt-fill text-white position-relative" style="font-size: 3rem;"></i>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title fw-bold">
+                                <i class="bi bi-geo-alt-fill text-primary"></i> {{ region.name }}
+                                <br>
+                                <small class="text-muted">{{ region.city }}</small>
+                            </h5>
+                            
+                            <!-- 평점 표시 -->
+                            <div class="mb-3">
+                                {% if region.reviews.count > 0 %}
+                                <span class="text-warning">
+                                    {% for i in "12345" %}
+                                    {% if forloop.counter <= region.avg_rating %}
+                                    <i class="bi bi-star-fill"></i>
+                                    {% else %}
+                                    <i class="bi bi-star"></i>
+                                    {% endif %}
+                                    {% endfor %}
+                                </span>
+                                <span class="region-score ms-2">{{ region.avg_rating|default:0 }}점</span>
+                                {% else %}
+                                <span class="text-muted"><i class="bi bi-star"></i> 평점 없음</span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 점수 표시 -->
+                            <div class="row text-center mb-3">
+                                <div class="col-4">
+                                    <div class="badge bg-primary p-2 w-100">교통<br>{{ region.traffic_score }}점</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="badge bg-success p-2 w-100">교육<br>{{ region.education_score }}점</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="badge bg-info p-2 w-100">의료<br>{{ region.medical_score }}점</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 생활비 레벨 -->
+                            <div class="mb-3">
+                                {% if region.cost_level == '매우낮음' %}
+                                <span class="badge bg-success fs-6">{{ region.cost_level }}</span>
+                                {% elif region.cost_level == '낮음' %}
+                                <span class="badge bg-info fs-6">{{ region.cost_level }}</span>
+                                {% elif region.cost_level == '보통' %}
+                                <span class="badge bg-warning fs-6">{{ region.cost_level }}</span>
+                                {% elif region.cost_level == '높음' %}
+                                <span class="badge bg-danger fs-6">{{ region.cost_level }}</span>
+                                {% else %}
+                                <span class="badge bg-dark fs-6">{{ region.cost_level }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 지역 정보 -->
+                            <div class="row text-center mb-3">
+                                <div class="col-6">
+                                    <small class="text-muted">인구</small><br>
+                                    <strong>{{ region.population|floatformat:0 }}명</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">면적</small><br>
+                                    <strong>{{ region.area }}km²</strong>
+                                </div>
+                            </div>
+                            
+                            <!-- 액션 버튼 -->
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'region_detail' region.id %}" class="btn btn-primary">
+                                    <i class="bi bi-eye"></i> 자세히 보기
+                                </a>
+                                <a href="{% url 'add_review' region.name %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-chat-dots"></i> 리뷰 작성
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- 페이지네이션 -->
+            {% if regions.has_other_pages %}
+            <nav aria-label="검색 결과 페이지네이션">
+                <ul class="pagination justify-content-center">
+                    {% if regions.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ regions.previous_page_number }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in regions.paginator.page_range %}
+                    {% if regions.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > regions.number|add:'-3' and num < regions.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if regions.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ regions.next_page_number }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">검색 결과가 없습니다</h4>
+                <p class="text-muted">다른 검색 조건을 시도해보세요</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 검색 조건 저장 모달 -->
+{% if user.is_authenticated %}
+<div class="modal fade" id="saveSearchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">검색 조건 저장</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'save_search' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="id_name" class="form-label">저장 이름</label>
+                        <input type="text" class="form-control" name="name" id="id_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_description" class="form-label">설명 (선택사항)</label>
+                        <textarea class="form-control" name="description" id="id_description" rows="2"></textarea>
+                    </div>
+                    <!-- 현재 검색 조건을 hidden으로 전달 -->
+                    {% for key, value in request.GET.items %}
+                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                    {% endfor %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function clearFilters() {
+    // 모든 폼 필드 초기화
+    document.getElementById('advancedSearchForm').reset();
+    // 폼 제출
+    document.getElementById('advancedSearchForm').submit();
+}
+
+// 폼 필드 변경 시 자동 검색 (선택사항)
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('advancedSearchForm');
+    const inputs = form.querySelectorAll('select, input[type="text"], input[type="number"]');
+    
+    // 자동 검색을 원한다면 아래 주석 해제
+    // inputs.forEach(input => {
+    //     input.addEventListener('change', function() {
+    //         form.submit();
+    //     });
+    // });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ region.name }} 리뷰{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4 page-title">
+  <h2><i class="bi bi-star"></i> {{ region.name }} 리뷰</h2>
+  <p class="text-muted">{{ region.city }}의 리뷰를 확인해보세요</p>
+</div>
+
+<!-- 지역 정보 및 통계 -->
+<div class="row mb-4">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8">
+            <h5 class="card-title">{{ region.name }}</h5>
+            <p class="text-muted">{{ region.city }}</p>
+            <div class="row">
+              <div class="col-md-4">
+                <small class="text-muted">
+                  <i class="bi bi-bus-front"></i> 교통: {{ region.traffic_score }}점
+                </small>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted">
+                  <i class="bi bi-book"></i> 교육: {{ region.education_score }}점
+                </small>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted">
+                  <i class="bi bi-cash-coin"></i> 생활비: {{ region.cost_level }}
+                </small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 text-end">
+            <a href="{% url 'region_detail' region.id %}" class="btn btn-outline-primary">
+              <i class="bi bi-info-circle"></i> 지역 상세보기
+            </a>
+            {% if user.is_authenticated %}
+              <a href="{% url 'create_review' region.id %}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> 리뷰 작성
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <h5 class="card-title text-primary">{{ region_stats.total_reviews }}</h5>
+        <p class="card-text">총 리뷰 수</p>
+        <h5 class="card-title text-warning">{{ region_stats.average_rating|floatformat:1 }}</h5>
+        <p class="card-text">평균 평점</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 평점 분포 -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h6><i class="bi bi-bar-chart"></i> 평점 분포</h6>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      {% for rating, count in region_stats.rating_distribution.items %}
+        <div class="col-md-2 text-center">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              {% for i in "12345" %}
+                {% if forloop.counter <= rating %}
+                  <i class="bi bi-star-fill text-warning"></i>
+                {% else %}
+                  <i class="bi bi-star text-muted"></i>
+                {% endif %}
+              {% endfor %}
+              <span class="ms-1">{{ rating }}점</span>
+            </div>
+          </div>
+          <div class="progress" style="height: 20px;">
+            <div class="progress-bar" role="progressbar" 
+                 style="width: {% if region_stats.total_reviews > 0 %}{{ count|floatformat:0|add:0|mul:100|div:region_stats.total_reviews }}{% else %}0{% endif %}%">
+              {{ count }}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- 리뷰 목록 -->
+{% if page_obj %}
+  {% for review in page_obj %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-person-circle fs-4 text-muted me-3"></i>
+            <div>
+              <h6 class="mb-0">{{ review.user.username }}</h6>
+              <small class="text-muted">
+                <i class="bi bi-calendar"></i> {{ review.created_at|date:"Y년 m월 d일 H:i" }}
+                {% if review.updated_at != review.created_at %}
+                  • <i class="bi bi-pencil"></i> 수정됨
+                {% endif %}
+              </small>
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="rating mb-1">
+              {% for i in "12345" %}
+                {% if forloop.counter <= review.rating %}
+                  <i class="bi bi-star-fill text-warning"></i>
+                {% else %}
+                  <i class="bi bi-star text-muted"></i>
+                {% endif %}
+              {% endfor %}
+              <span class="ms-1 fw-bold">{{ review.rating }}점</span>
+            </div>
+          </div>
+        </div>
+        
+        <p class="card-text">{{ review.comment|linebreaks }}</p>
+        
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <button class="btn btn-outline-primary btn-sm" onclick="likeReview({{ review.id }})">
+              <i class="bi bi-heart"></i> 좋아요
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="shareReview({{ review.id }})">
+              <i class="bi bi-share"></i> 공유
+            </button>
+          </div>
+          
+          <div>
+            <a href="{% url 'review_detail' review.id %}" class="btn btn-primary btn-sm">
+              <i class="bi bi-eye"></i> 자세히 보기
+            </a>
+            {% if user == review.user %}
+              <a href="{% url 'edit_review' review.id %}" class="btn btn-outline-warning btn-sm">
+                <i class="bi bi-pencil"></i> 수정
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  
+  <!-- 페이지네이션 -->
+  {% if page_obj.has_other_pages %}
+    <nav aria-label="리뷰 페이지네이션">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1">처음</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">이전</a>
+          </li>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <li class="page-item active">
+              <span class="page-link">{{ num }}</span>
+            </li>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">다음</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">마지막</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+{% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-inbox display-1 text-muted"></i>
+    <h4 class="mt-3">아직 리뷰가 없습니다</h4>
+    <p class="text-muted">{{ region.name }}에 대한 첫 번째 리뷰를 작성해보세요!</p>
+    {% if user.is_authenticated %}
+      <a href="{% url 'create_review' region.id %}" class="btn btn-primary">
+        <i class="bi bi-pencil"></i> 리뷰 작성하기
+      </a>
+    {% else %}
+      <a href="{% url 'login' %}" class="btn btn-primary">
+        <i class="bi bi-box-arrow-in-right"></i> 로그인 후 리뷰 작성
+      </a>
+    {% endif %}
+  </div>
+{% endif %}
+
+<script>
+function likeReview(reviewId) {
+  // 좋아요 기능 구현
+  alert('좋아요 기능은 준비 중입니다.');
+}
+
+function shareReview(reviewId) {
+  const url = window.location.origin + '/reviews/' + reviewId + '/';
+  if (navigator.share) {
+    navigator.share({
+      title: '{{ region.name }} 리뷰',
+      text: '{{ region.name }}에 대한 리뷰를 확인해보세요',
+      url: url
+    });
+  } else {
+    navigator.clipboard.writeText(url).then(() => {
+      alert('링크가 클립보드에 복사되었습니다.');
+    });
+  }
+}
+</script>
+{% endblock %}

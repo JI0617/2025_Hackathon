@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ comparison.name }} - 지역 비교{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4 page-title">
+  <h2><i class="bi bi-arrow-left-right"></i> {{ comparison.name }}</h2>
+  <p class="text-muted">{{ comparison.regions.count }}개 지역 비교</p>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5><i class="bi bi-bar-chart"></i> 비교 결과</h5>
+        <div class="btn-group">
+          <a href="{% url 'edit_comparison' comparison.id %}" class="btn btn-outline-warning btn-sm">
+            <i class="bi bi-pencil"></i> 수정
+          </a>
+          <a href="{% url 'delete_comparison' comparison.id %}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-trash"></i> 삭제
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>지역</th>
+                <th>교통</th>
+                <th>교육</th>
+                <th>의료</th>
+                <th>생활비</th>
+                <th>인구</th>
+                <th>면적</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for region in comparison_data %}
+                <tr>
+                  <td>
+                    <strong>{{ region.name }}</strong><br>
+                    <small class="text-muted">{{ region.city }}</small>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="progress me-2" style="width: 60px; height: 20px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {% widthratio region.traffic_score 10 100 %}%">
+                          {{ region.traffic_score }}
+                        </div>
+                      </div>
+                      <span class="fw-bold">{{ region.traffic_score }}점</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="progress me-2" style="width: 60px; height: 20px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {% widthratio region.education_score 10 100 %}%">
+                          {{ region.education_score }}
+                        </div>
+                      </div>
+                      <span class="fw-bold">{{ region.education_score }}점</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="progress me-2" style="width: 60px; height: 20px;">
+                        <div class="progress-bar bg-info" role="progressbar" 
+                             style="width: {% widthratio region.medical_score 10 100 %}%">
+                          {{ region.medical_score }}
+                        </div>
+                      </div>
+                      <span class="fw-bold">{{ region.medical_score }}점</span>
+                    </div>
+                  </td>
+                  <td>
+                    {% if region.cost_level == '매우낮음' %}
+                      <span class="badge bg-success">{{ region.cost_level }}</span>
+                    {% elif region.cost_level == '낮음' %}
+                      <span class="badge bg-success">{{ region.cost_level }}</span>
+                    {% elif region.cost_level == '보통' %}
+                      <span class="badge bg-warning">{{ region.cost_level }}</span>
+                    {% elif region.cost_level == '높음' %}
+                      <span class="badge bg-danger">{{ region.cost_level }}</span>
+                    {% else %}
+                      <span class="badge bg-danger">{{ region.cost_level }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if region.population %}
+                      {{ region.population|floatformat:0 }}명
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if region.area %}
+                      {{ region.area }}km²
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <!-- 통계 -->
+    {% if stats %}
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6><i class="bi bi-graph-up"></i> 통계</h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <h6>교통</h6>
+            <div class="row text-center">
+              <div class="col-4">
+                <small class="text-muted">최고</small><br>
+                <strong class="text-success">{{ stats.traffic.max }}</strong>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">평균</small><br>
+                <strong>{{ stats.traffic.avg|floatformat:1 }}</strong>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">최저</small><br>
+                <strong class="text-danger">{{ stats.traffic.min }}</strong>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <h6>교육</h6>
+            <div class="row text-center">
+              <div class="col-4">
+                <small class="text-muted">최고</small><br>
+                <strong class="text-success">{{ stats.education.max }}</strong>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">평균</small><br>
+                <strong>{{ stats.education.avg|floatformat:1 }}</strong>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">최저</small><br>
+                <strong class="text-danger">{{ stats.education.min }}</strong>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <h6>의료</h6>
+            <div class="row text-center">
+              <div class="col-4">
+                <small class="text-muted">최고</small><br>
+                <strong class="text-success">{{ stats.medical.max }}</strong>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">평균</small><br>
+                <strong>{{ stats.medical.avg|floatformat:1 }}</strong>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">최저</small><br>
+                <strong class="text-danger">{{ stats.medical.min }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    
+    <!-- 추천 지역 -->
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-trophy"></i> 추천 지역</h6>
+      </div>
+      <div class="card-body">
+        {% for region in comparison_data %}
+          {% with total_score=region.traffic_score|add:region.education_score|add:region.medical_score %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <strong>{{ region.name }}</strong><br>
+                <small class="text-muted">{{ region.city }}</small>
+              </div>
+              <div class="text-end">
+                <span class="badge bg-primary">{{ total_score }}/30</span>
+              </div>
+            </div>
+          {% endwith %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 차트 -->
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-bus-front"></i> 교통 점수</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="trafficChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-book"></i> 교육 점수</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="educationChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-hospital"></i> 의료 점수</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="medicalChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="text-center">
+  <a href="{% url 'comparison_list' %}" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left"></i> 목록으로
+  </a>
+  <a href="{% url 'edit_comparison' comparison.id %}" class="btn btn-warning">
+    <i class="bi bi-pencil"></i> 수정하기
+  </a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 차트 생성
+const regions = {{ comparison_data|safe }};
+
+// 교통 점수 차트
+const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+new Chart(trafficCtx, {
+  type: 'bar',
+  data: {
+    labels: regions.map(r => r.name),
+    datasets: [{
+      label: '교통 점수',
+      data: regions.map(r => r.traffic_score),
+      backgroundColor: 'rgba(54, 162, 235, 0.8)',
+      borderColor: 'rgba(54, 162, 235, 1)',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 10
+      }
+    }
+  }
+});
+
+// 교육 점수 차트
+const educationCtx = document.getElementById('educationChart').getContext('2d');
+new Chart(educationCtx, {
+  type: 'bar',
+  data: {
+    labels: regions.map(r => r.name),
+    datasets: [{
+      label: '교육 점수',
+      data: regions.map(r => r.education_score),
+      backgroundColor: 'rgba(75, 192, 192, 0.8)',
+      borderColor: 'rgba(75, 192, 192, 1)',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 10
+      }
+    }
+  }
+});
+
+// 의료 점수 차트
+const medicalCtx = document.getElementById('medicalChart').getContext('2d');
+new Chart(medicalCtx, {
+  type: 'bar',
+  data: {
+    labels: regions.map(r => r.name),
+    datasets: [{
+      label: '의료 점수',
+      data: regions.map(r => r.medical_score),
+      backgroundColor: 'rgba(255, 99, 132, 0.8)',
+      borderColor: 'rgba(255, 99, 132, 1)',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 10
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

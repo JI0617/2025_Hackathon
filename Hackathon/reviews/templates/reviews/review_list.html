@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}리뷰 목록{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4 page-title">
+  <h2><i class="bi bi-star"></i> 지역 리뷰</h2>
+  <p class="text-muted">다른 사용자들의 지역 리뷰를 확인해보세요</p>
+</div>
+
+<!-- 통계 카드 -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title text-primary">{{ stats.total_reviews }}</h5>
+        <p class="card-text">총 리뷰 수</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title text-warning">{{ stats.average_rating|floatformat:1 }}</h5>
+        <p class="card-text">평균 평점</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title text-success">{{ popular_regions|length }}</h5>
+        <p class="card-text">리뷰가 있는 지역</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title text-info">{{ page_obj.paginator.num_pages }}</h5>
+        <p class="card-text">총 페이지</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 필터 및 검색 -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3">
+      <div class="col-md-3">
+        <label for="region" class="form-label">지역</label>
+        <select name="region" id="region" class="form-select">
+          <option value="">전체 지역</option>
+          {% for region in regions %}
+            <option value="{{ region.name }}" {% if current_filters.region == region.name %}selected{% endif %}>
+              {{ region.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="rating" class="form-label">평점</label>
+        <select name="rating" id="rating" class="form-select">
+          <option value="">전체 평점</option>
+          {% for i in "12345" %}
+            <option value="{{ i }}" {% if current_filters.rating == i %}selected{% endif %}>
+              {{ i }}점
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="sort" class="form-label">정렬</label>
+        <select name="sort" id="sort" class="form-select">
+          <option value="-created_at" {% if current_filters.sort == "-created_at" %}selected{% endif %}>최신순</option>
+          <option value="created_at" {% if current_filters.sort == "created_at" %}selected{% endif %}>오래된순</option>
+          <option value="-rating" {% if current_filters.sort == "-rating" %}selected{% endif %}>높은 평점순</option>
+          <option value="rating" {% if current_filters.sort == "rating" %}selected{% endif %}>낮은 평점순</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="search" class="form-label">검색</label>
+        <input type="text" name="search" id="search" class="form-control" 
+               placeholder="리뷰 내용, 지역명, 작성자 검색" value="{{ current_filters.search }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">&nbsp;</label>
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i> 검색
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 리뷰 목록 -->
+<div class="row">
+  <div class="col-md-8">
+    {% if page_obj %}
+      {% for review in page_obj %}
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h5 class="card-title mb-1">
+                  <a href="{% url 'review_detail' review.id %}" class="text-decoration-none">
+                    {{ review.region.name }}
+                  </a>
+                </h5>
+                <p class="text-muted mb-0">
+                  <i class="bi bi-person"></i> {{ review.user.username }} • 
+                  <i class="bi bi-calendar"></i> {{ review.created_at|date:"Y-m-d H:i" }}
+                </p>
+              </div>
+              <div class="text-end">
+                <div class="rating mb-1">
+                  {% for i in "12345" %}
+                    {% if forloop.counter <= review.rating %}
+                      <i class="bi bi-star-fill text-warning"></i>
+                    {% else %}
+                      <i class="bi bi-star text-muted"></i>
+                    {% endif %}
+                  {% endfor %}
+                  <span class="ms-1 fw-bold">{{ review.rating }}점</span>
+                </div>
+              </div>
+            </div>
+            
+            <p class="card-text">{{ review.comment|truncatewords:30 }}</p>
+            
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <a href="{% url 'region_reviews' review.region.id %}" class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-geo-alt"></i> {{ review.region.name }} 리뷰 더보기
+                </a>
+              </div>
+              <div>
+                <a href="{% url 'review_detail' review.id %}" class="btn btn-primary btn-sm">
+                  <i class="bi bi-eye"></i> 자세히 보기
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+      
+      <!-- 페이지네이션 -->
+      {% if page_obj.has_other_pages %}
+        <nav aria-label="리뷰 페이지네이션">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1{% if current_filters.region %}&region={{ current_filters.region }}{% endif %}{% if current_filters.rating %}&rating={{ current_filters.rating }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}{% if current_filters.sort %}&sort={{ current_filters.sort }}{% endif %}">처음</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_filters.region %}&region={{ current_filters.region }}{% endif %}{% if current_filters.rating %}&rating={{ current_filters.rating }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}{% if current_filters.sort %}&sort={{ current_filters.sort }}{% endif %}">이전</a>
+              </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+                <li class="page-item active">
+                  <span class="page-link">{{ num }}</span>
+                </li>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ num }}{% if current_filters.region %}&region={{ current_filters.region }}{% endif %}{% if current_filters.rating %}&rating={{ current_filters.rating }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}{% if current_filters.sort %}&sort={{ current_filters.sort }}{% endif %}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_filters.region %}&region={{ current_filters.region }}{% endif %}{% if current_filters.rating %}&rating={{ current_filters.rating }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}{% if current_filters.sort %}&sort={{ current_filters.sort }}{% endif %}">다음</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if current_filters.region %}&region={{ current_filters.region }}{% endif %}{% if current_filters.rating %}&rating={{ current_filters.rating }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}{% if current_filters.sort %}&sort={{ current_filters.sort }}{% endif %}">마지막</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <h4 class="mt-3">리뷰가 없습니다</h4>
+        <p class="text-muted">아직 작성된 리뷰가 없습니다. 첫 번째 리뷰를 작성해보세요!</p>
+        {% if user.is_authenticated %}
+          <a href="{% url 'region_list' %}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> 리뷰 작성하기
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+  
+  <!-- 사이드바 -->
+  <div class="col-md-4">
+    <!-- 평점 분포 -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h6><i class="bi bi-bar-chart"></i> 평점 분포</h6>
+      </div>
+      <div class="card-body">
+        {% for rating, count in stats.rating_distribution.items %}
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              {% for i in "12345" %}
+                {% if forloop.counter <= rating %}
+                  <i class="bi bi-star-fill text-warning"></i>
+                {% else %}
+                  <i class="bi bi-star text-muted"></i>
+                {% endif %}
+              {% endfor %}
+              <span class="ms-1">{{ rating }}점</span>
+            </div>
+            <div class="progress flex-grow-1 mx-2" style="height: 20px;">
+              <div class="progress-bar" role="progressbar" 
+                   style="width: {% if stats.total_reviews > 0 %}{{ count|floatformat:0|add:0|mul:100|div:stats.total_reviews }}{% else %}0{% endif %}%">
+                {{ count }}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    
+    <!-- 인기 지역 -->
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-trophy"></i> 인기 지역</h6>
+      </div>
+      <div class="card-body">
+        {% for region in popular_regions %}
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <a href="{% url 'region_reviews' region.id %}" class="text-decoration-none">
+              {{ region.name }}
+            </a>
+            <span class="badge bg-primary">{{ region.review_count }}개 리뷰</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ review.region.name }} 리뷰 수정{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4 page-title">
+  <h2><i class="bi bi-pencil"></i> 리뷰 수정</h2>
+  <p class="text-muted">{{ review.region.name }}에 대한 리뷰를 수정해주세요</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <!-- 지역 정보 카드 -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8">
+            <h5 class="card-title">{{ review.region.name }}</h5>
+            <p class="text-muted">{{ review.region.city }}</p>
+            <div class="row">
+              <div class="col-md-4">
+                <small class="text-muted">
+                  <i class="bi bi-bus-front"></i> 교통: {{ review.region.traffic_score }}점
+                </small>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted">
+                  <i class="bi bi-book"></i> 교육: {{ review.region.education_score }}점
+                </small>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted">
+                  <i class="bi bi-cash-coin"></i> 생활비: {{ review.region.cost_level }}
+                </small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 text-end">
+            <a href="{% url 'region_detail' review.region.id %}" class="btn btn-outline-primary">
+              <i class="bi bi-info-circle"></i> 지역 상세보기
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 리뷰 수정 폼 -->
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="bi bi-pencil"></i> 리뷰 수정</h5>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          
+          <!-- 평점 선택 -->
+          <div class="mb-4">
+            <label class="form-label">
+              <i class="bi bi-star"></i> 평점 <span class="text-danger">*</span>
+            </label>
+            <div class="rating-input">
+              <div class="d-flex gap-2">
+                {% for i in "12345" %}
+                  <label class="rating-option">
+                    <input type="radio" name="rating" value="{{ i }}" required 
+                           {% if review.rating == i %}checked{% endif %}>
+                    <div class="rating-stars" data-rating="{{ i }}">
+                      {% for j in "12345" %}
+                        {% if forloop.counter <= i %}
+                          <i class="bi bi-star-fill"></i>
+                        {% else %}
+                          <i class="bi bi-star"></i>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                    <span class="rating-text">{{ i }}점</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          
+          <!-- 리뷰 내용 -->
+          <div class="mb-4">
+            <label for="comment" class="form-label">
+              <i class="bi bi-chat-text"></i> 리뷰 내용 <span class="text-danger">*</span>
+            </label>
+            <textarea name="comment" id="comment" class="form-control" rows="6" 
+                      placeholder="이 지역에 대한 솔직한 리뷰를 작성해주세요. 교통, 교육, 생활비, 주변 환경 등에 대해 자유롭게 의견을 남겨주세요." 
+                      required maxlength="1000">{{ review.comment }}</textarea>
+            <div class="form-text">
+              <span id="char-count">{{ review.comment|length }}</span>/1000자
+            </div>
+          </div>
+          
+          <!-- 작성 가이드 -->
+          <div class="alert alert-info">
+            <h6><i class="bi bi-lightbulb"></i> 리뷰 작성 가이드</h6>
+            <ul class="mb-0">
+              <li>솔직하고 객관적인 리뷰를 작성해주세요</li>
+              <li>개인적인 경험을 바탕으로 구체적인 내용을 포함해주세요</li>
+              <li>욕설이나 비방성 내용은 삼가해주세요</li>
+              <li>다른 사용자에게 도움이 되는 정보를 제공해주세요</li>
+            </ul>
+          </div>
+          
+          <!-- 버튼 -->
+          <div class="d-flex justify-content-between">
+            <a href="{% url 'review_detail' review.id %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> 취소
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check"></i> 리뷰 수정
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.rating-input {
+  margin: 1rem 0;
+}
+
+.rating-option {
+  cursor: pointer;
+  text-align: center;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.rating-option:hover {
+  background-color: #f8f9fa;
+}
+
+.rating-option input[type="radio"] {
+  display: none;
+}
+
+.rating-option input[type="radio"]:checked + .rating-stars {
+  color: #ffc107;
+}
+
+.rating-option input[type="radio"]:checked + .rating-stars + .rating-text {
+  font-weight: bold;
+  color: #ffc107;
+}
+
+.rating-stars {
+  font-size: 1.5rem;
+  color: #dee2e6;
+  margin-bottom: 0.25rem;
+}
+
+.rating-text {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.rating-option:hover .rating-stars {
+  color: #ffc107;
+}
+</style>
+
+<script>
+// 문자 수 카운터
+document.getElementById('comment').addEventListener('input', function(e) {
+  const charCount = e.target.value.length;
+  document.getElementById('char-count').textContent = charCount;
+  
+  if (charCount > 800) {
+    document.getElementById('char-count').className = 'text-danger';
+  } else if (charCount > 600) {
+    document.getElementById('char-count').className = 'text-warning';
+  } else {
+    document.getElementById('char-count').className = 'text-muted';
+  }
+});
+
+// 평점 선택 시 시각적 피드백
+document.querySelectorAll('input[name="rating"]').forEach(radio => {
+  radio.addEventListener('change', function() {
+    // 모든 옵션의 선택 상태 초기화
+    document.querySelectorAll('.rating-option').forEach(option => {
+      option.classList.remove('selected');
+    });
+    
+    // 선택된 옵션에 클래스 추가
+    this.closest('.rating-option').classList.add('selected');
+  });
+});
+
+// 페이지 로드 시 현재 선택된 평점에 클래스 추가
+document.addEventListener('DOMContentLoaded', function() {
+  const checkedRadio = document.querySelector('input[name="rating"]:checked');
+  if (checkedRadio) {
+    checkedRadio.closest('.rating-option').classList.add('selected');
+  }
+});
+</script>
+{% endblock %}

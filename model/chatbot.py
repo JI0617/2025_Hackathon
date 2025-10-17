@@ -17,7 +17,7 @@ load_dotenv("key.env")
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
 os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
-os.environ["LANGCHAIN_PROJECT"] = "hack" # 프로젝트 이름을 설정할 수 있습니다.
+os.environ["LANGCHAIN_PROJECT"] = "Card-Recommand" # 프로젝트 이름을 설정할 수 있습니다.
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -236,7 +236,7 @@ def main():
             
         try:
             answer = recommend_chain.invoke(user_query)
-            print(f"\n[4o의 추천]\n{answer}")
+            print(f"\n[Gemini의 추천]\n{answer}")
         except Exception as e:
             print(f"\n[오류] 추천 결과 생성에 실패했습니다: {e}")
 
