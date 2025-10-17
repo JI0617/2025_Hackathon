@@ -30,6 +30,7 @@ urlpatterns = [
     path('reviews/', include('reviews.urls')),  # 리뷰 관련
     path('comparisons/', include('comparisons.urls')),  # 비교 관련
     path('chatbot/', include('chatbot.urls')),  # 챗봇 관련
+    path('policies/', include('policies.urls')),  # 정책 관련
 ]
 
 

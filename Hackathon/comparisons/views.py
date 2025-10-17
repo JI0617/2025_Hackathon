@@ -13,7 +13,21 @@ from regions.models import Region
 @login_required
 def comparison_list(request):
     """비교 목록 페이지"""
-    comparisons = Comparison.objects.filter(user=request.user).order_by('-created_at')
+    # 필터링 옵션
+    category_filter = request.GET.get('category', '')
+    favorite_filter = request.GET.get('favorite', '')
+    
+    comparisons = Comparison.objects.filter(user=request.user)
+    
+    # 카테고리 필터링
+    if category_filter:
+        comparisons = comparisons.filter(category=category_filter)
+    
+    # 찜 목록 필터링
+    if favorite_filter == 'true':
+        comparisons = comparisons.filter(is_favorite=True)
+    
+    comparisons = comparisons.order_by('-created_at')
     
     # 페이지네이션
     paginator = Paginator(comparisons, 10)
@@ -21,7 +35,12 @@ def comparison_list(request):
     page_obj = paginator.get_page(page_number)
     
     context = {
-        'page_obj': page_obj
+        'page_obj': page_obj,
+        'categories': Comparison.CATEGORY_CHOICES,
+        'current_filters': {
+            'category': category_filter,
+            'favorite': favorite_filter
+        }
     }
     
     return render(request, 'comparisons/comparison_list.html', context)
@@ -278,3 +297,21 @@ def quick_compare(request):
     }
     
     return render(request, 'comparisons/quick_compare.html', context)
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def toggle_favorite(request, comparison_id):
+    """비교 찜 토글 (AJAX)"""
+    try:
+        comparison = get_object_or_404(Comparison, id=comparison_id, user=request.user)
+        comparison.is_favorite = not comparison.is_favorite
+        comparison.save()
+        
+        return JsonResponse({
+            'message': '찜 목록에서 제거되었습니다.' if not comparison.is_favorite else '찜 목록에 추가되었습니다.',
+            'is_favorite': comparison.is_favorite
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

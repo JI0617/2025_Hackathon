@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}정책 목록{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-file-earmark-text text-primary"></i> 정책 목록
+                </h1>
+                <a href="{% url 'policy_recommendations' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-star"></i> 추천 정책
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 필터 섹션 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="category" class="form-label">카테고리</label>
+                            <select name="category" id="category" class="form-select">
+                                <option value="">전체</option>
+                                {% for code, name in categories %}
+                                <option value="{{ code }}" {% if current_filters.category == code %}selected{% endif %}>
+                                    {{ name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="region" class="form-label">지역</label>
+                            <select name="region" id="region" class="form-select">
+                                <option value="">전체</option>
+                                {% for region in regions %}
+                                <option value="{{ region.id }}" {% if current_filters.region == region.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ region.city }} {{ region.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">검색</label>
+                            <input type="text" name="search" id="search" class="form-control" 
+                                   value="{{ current_filters.search }}" placeholder="정책명, 내용 검색">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="application_open" class="form-label">신청 상태</label>
+                            <select name="application_open" id="application_open" class="form-select">
+                                <option value="">전체</option>
+                                <option value="true" {% if current_filters.application_open == 'true' %}selected{% endif %}>
+                                    신청 가능
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> 검색
+                            </button>
+                            <a href="{% url 'policy_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise"></i> 초기화
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 카테고리별 통계 -->
+    {% if category_stats %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">카테고리별 정책 현황</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for code, stats in category_stats.items %}
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'policy_category' code %}" class="text-decoration-none">
+                                <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                                    <span>{{ stats.name }}</span>
+                                    <span class="badge bg-primary">{{ stats.count }}</span>
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 정책 목록 -->
+    <div class="row">
+        {% for policy in page_obj %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-secondary">{{ policy.get_category_display_name }}</span>
+                        {% if policy.is_application_open %}
+                        <span class="badge bg-success">신청가능</span>
+                        {% else %}
+                        <span class="badge bg-secondary">마감</span>
+                        {% endif %}
+                    </div>
+                    
+                    <h5 class="card-title">
+                        <a href="{% url 'policy_detail' policy.id %}" class="text-decoration-none">
+                            {{ policy.title }}
+                        </a>
+                    </h5>
+                    
+                    <p class="card-text text-muted">{{ policy.summary|truncatechars:100 }}</p>
+                    
+                    {% if policy.region %}
+                    <p class="card-text">
+                        <small class="text-muted">
+                            <i class="bi bi-geo-alt"></i> {{ policy.region.city }} {{ policy.region.name }}
+                        </small>
+                    </p>
+                    {% endif %}
+                    
+                    {% if policy.support_amount %}
+                    <p class="card-text">
+                        <small class="text-primary">
+                            <i class="bi bi-currency-dollar"></i> 
+                            {{ policy.support_amount|floatformat:0 }}원 지원
+                        </small>
+                    </p>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">{{ policy.created_at|date:"Y.m.d" }}</small>
+                        <a href="{% url 'policy_detail' policy.id %}" class="btn btn-sm btn-outline-primary">
+                            자세히 보기
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h3 class="mt-3 text-muted">검색 결과가 없습니다</h3>
+                <p class="text-muted">다른 검색 조건을 시도해보세요.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 페이지네이션 -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="정책 목록 페이지네이션">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">이전</a>
+            </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% else %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">다음</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

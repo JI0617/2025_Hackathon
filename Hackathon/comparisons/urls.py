@@ -15,4 +15,5 @@ urlpatterns = [
     # AJAX 기능
     path('add-region/<int:comparison_id>/', views.add_region_to_comparison, name='add_region_to_comparison'),
     path('remove-region/<int:comparison_id>/', views.remove_region_from_comparison, name='remove_region_from_comparison'),
+    path('toggle-favorite/<int:comparison_id>/', views.toggle_favorite, name='toggle_favorite'),
 ]

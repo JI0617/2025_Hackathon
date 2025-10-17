@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}추천 정책{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">
+                <i class="bi bi-star text-primary"></i> 추천 정책
+            </h1>
+        </div>
+    </div>
+
+    <!-- 추천 정책 -->
+    {% if featured_policies %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="h4 mb-3">⭐ 추천 정책</h2>
+            <div class="row">
+                {% for policy in featured_policies %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-light text-dark">{{ policy.get_category_display_name }}</span>
+                                {% if policy.is_application_open %}
+                                <span class="badge bg-success">신청가능</span>
+                                {% else %}
+                                <span class="badge bg-secondary">마감</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'policy_detail' policy.id %}" class="text-decoration-none">
+                                    {{ policy.title }}
+                                </a>
+                            </h5>
+                            
+                            <p class="card-text text-muted">{{ policy.summary|truncatechars:100 }}</p>
+                            
+                            {% if policy.region %}
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-geo-alt"></i> {{ policy.region.city }} {{ policy.region.name }}
+                                </small>
+                            </p>
+                            {% endif %}
+                            
+                            {% if policy.support_amount %}
+                            <p class="card-text">
+                                <small class="text-primary">
+                                    <i class="bi bi-currency-dollar"></i> 
+                                    {{ policy.support_amount|floatformat:0 }}원 지원
+                                </small>
+                            </p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">{{ policy.created_at|date:"Y.m.d" }}</small>
+                                <a href="{% url 'policy_detail' policy.id %}" class="btn btn-sm btn-primary">
+                                    자세히 보기
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 신청 마감 임박 정책 -->
+    {% if urgent_policies %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="h4 mb-3">⚠️ 신청 마감 임박</h2>
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> 
+                다음 정책들의 신청 마감이 임박했습니다. 서둘러 신청해주세요!
+            </div>
+            
+            <div class="row">
+                {% for policy in urgent_policies %}
+                <div class="col-md-6 mb-3">
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title mb-1">
+                                        <a href="{% url 'policy_detail' policy.id %}" class="text-decoration-none">
+                                            {{ policy.title }}
+                                        </a>
+                                    </h6>
+                                    <p class="card-text text-muted mb-2">{{ policy.summary|truncatechars:80 }}</p>
+                                    <small class="text-danger">
+                                        <i class="bi bi-clock"></i> 
+                                        마감: {{ policy.application_end|date:"m월 d일" }}
+                                    </small>
+                                </div>
+                                <span class="badge bg-warning text-dark">임박</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 카테고리별 정책 -->
+    {% if category_policies %}
+    <div class="row">
+        <div class="col-12">
+            <h2 class="h4 mb-3">📋 카테고리별 최신 정책</h2>
+            
+            {% for category_code, category_data in category_policies.items %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ category_data.name }}</h5>
+                        <a href="{% url 'policy_category' category_code %}" class="btn btn-sm btn-outline-primary">
+                            전체보기
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row">
+                        {% for policy in category_data.policies %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <a href="{% url 'policy_detail' policy.id %}" class="text-decoration-none">
+                                            {{ policy.title|truncatechars:40 }}
+                                        </a>
+                                    </h6>
+                                    
+                                    <p class="card-text text-muted small">{{ policy.summary|truncatechars:60 }}</p>
+                                    
+                                    {% if policy.support_amount %}
+                                    <p class="card-text">
+                                        <small class="text-primary">
+                                            <i class="bi bi-currency-dollar"></i> 
+                                            {{ policy.support_amount|floatformat:0 }}원
+                                        </small>
+                                    </p>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">{{ policy.created_at|date:"m.d" }}</small>
+                                        {% if policy.is_application_open %}
+                                        <span class="badge bg-success small">신청가능</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary small">마감</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 전체 정책 보기 -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <a href="{% url 'policy_list' %}" class="btn btn-primary btn-lg">
+                <i class="bi bi-list"></i> 전체 정책 보기
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
