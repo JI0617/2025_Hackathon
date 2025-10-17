@@ -32,7 +32,7 @@
             </div>
           </div>
           <div class="col-md-4 text-end">
-            <a href="{% url 'region_detail' region.id %}" class="btn btn-outline-primary">
+            <a href="{% url 'region_detail' region.name %}" class="btn btn-outline-primary">
               <i class="bi bi-info-circle"></i> 지역 상세보기
             </a>
           </div>
@@ -101,7 +101,7 @@
           
           <!-- 버튼 -->
           <div class="d-flex justify-content-between">
-            <a href="{% url 'region_detail' region.id %}" class="btn btn-outline-secondary">
+            <a href="{% url 'region_detail' region.name %}" class="btn btn-outline-secondary">
               <i class="bi bi-arrow-left"></i> 취소
             </a>
             <button type="submit" class="btn btn-primary">

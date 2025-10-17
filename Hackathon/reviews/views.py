@@ -14,7 +14,6 @@ def review_list(request):
     """리뷰 목록 페이지"""
     # 필터링 옵션
     region_filter = request.GET.get('region', '')
-    rating_filter = request.GET.get('rating', '')
     search_query = request.GET.get('search', '')
     
     # 기본 쿼리셋
@@ -23,9 +22,6 @@ def review_list(request):
     # 필터링 적용
     if region_filter:
         reviews = reviews.filter(region__name__icontains=region_filter)
-    
-    if rating_filter:
-        reviews = reviews.filter(rating=rating_filter)
     
     if search_query:
         reviews = reviews.filter(
@@ -46,12 +42,7 @@ def review_list(request):
     # 통계 정보
     stats = {
         'total_reviews': Review.objects.count(),
-        'average_rating': Review.objects.aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0,
-        'rating_distribution': {}
     }
-    
-    for i in range(1, 6):
-        stats['rating_distribution'][i] = Review.objects.filter(rating=i).count()
     
     # 인기 지역 (리뷰 수 기준)
     popular_regions = Region.objects.annotate(
@@ -65,7 +56,6 @@ def review_list(request):
         'regions': Region.objects.all().order_by('name'),
         'current_filters': {
             'region': region_filter,
-            'rating': rating_filter,
             'search': search_query,
             'sort': sort_by
         }
@@ -101,17 +91,15 @@ def create_review(request, region_id):
         return redirect('review_detail', review_id=existing_review.id)
     
     if request.method == 'POST':
-        rating = request.POST.get('rating')
         comment = request.POST.get('comment', '').strip()
         
-        if not rating or not comment:
-            messages.error(request, '평점과 댓글을 모두 입력해주세요.')
+        if not comment:
+            messages.error(request, '댓글을 입력해주세요.')
         else:
             try:
                 review = Review.objects.create(
                     user=request.user,
                     region=region,
-                    rating=int(rating),
                     comment=comment
                 )
                 messages.success(request, '리뷰가 성공적으로 작성되었습니다.')
@@ -131,14 +119,12 @@ def edit_review(request, review_id):
     review = get_object_or_404(Review, id=review_id, user=request.user)
     
     if request.method == 'POST':
-        rating = request.POST.get('rating')
         comment = request.POST.get('comment', '').strip()
         
-        if not rating or not comment:
-            messages.error(request, '평점과 댓글을 모두 입력해주세요.')
+        if not comment:
+            messages.error(request, '댓글을 입력해주세요.')
         else:
             try:
-                review.rating = int(rating)
                 review.comment = comment
                 review.save()
                 messages.success(request, '리뷰가 성공적으로 수정되었습니다.')
@@ -195,12 +181,7 @@ def region_reviews(request, region_id):
     # 지역 통계
     region_stats = {
         'total_reviews': reviews.count(),
-        'average_rating': reviews.aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0,
-        'rating_distribution': {}
     }
-    
-    for i in range(1, 6):
-        region_stats['rating_distribution'][i] = reviews.filter(rating=i).count()
     
     context = {
         'region': region,

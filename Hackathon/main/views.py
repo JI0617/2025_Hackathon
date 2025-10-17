@@ -89,12 +89,20 @@ def home(request):
         # 비로그인 사용자는 전체 지역 중 상위 12개
         recommended_regions = Region.objects.all()[:12]
     
+    # 추천 정책 (최신 6개)
+    from policies.models import Policy
+    recommended_policies = Policy.objects.filter(
+        is_active=True,
+        is_featured=True
+    ).order_by('-priority', '-created_at')[:6]
+    
     # 통계 정보
     total_regions_count = Region.objects.count()
     total_reviews_count = Review.objects.count()
     
     context = {
         'regions': recommended_regions,
+        'recommended_policies': recommended_policies,
         'total_regions_count': total_regions_count,
         'total_reviews_count': total_reviews_count,
     }
@@ -104,7 +112,6 @@ def region_detail(request, name):
     """지역 상세 페이지 - 리뷰 및 평점 포함"""
     region = get_object_or_404(Region, name=name) 
     reviews = region.reviews.all()
-    avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
     
     # 사용자 리뷰 작성 폼
     review_form = None
@@ -117,7 +124,6 @@ def region_detail(request, name):
     context = {
         'region': region,
         'reviews': reviews[:5],  # 최근 5개 리뷰만 표시
-        'avg_rating': round(avg_rating, 1),
         'review_count': reviews.count(),
         'review_form': review_form,
         'user_review': user_review,
@@ -249,8 +255,6 @@ def comparison_detail(request, pk):
     # 비교 데이터 준비 - 각 지역에 리뷰 정보 추가
     comparison_data = []
     for region in regions:
-        avg_rating = region.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
-        region.avg_rating = round(avg_rating, 1)
         region.review_count = region.reviews.count()
         comparison_data.append(region)
     
@@ -280,7 +284,6 @@ def api_regions(request):
     regions = Region.objects.all()
     data = []
     for region in regions:
-        avg_rating = region.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
         data.append({
             'id': region.id,
             'name': region.name,
@@ -412,7 +415,6 @@ def api_region_updates(request, region_id):
     for review in reviews:
         updates['recent_reviews'].append({
             'id': review.id,
-            'rating': review.rating,
             'comment': review.comment[:100] + '...' if len(review.comment) > 100 else review.comment,
             'created_at': review.created_at.isoformat(),
             'user': review.user.username if review.user else '익명',
@@ -476,9 +478,7 @@ def advanced_search(request):
         if has_reviews:
             regions = regions.filter(reviews__isnull=False).distinct()
         
-        min_rating = form.cleaned_data.get('min_rating')
-        if min_rating:
-            regions = regions.annotate(avg_rating=Avg('reviews__rating')).filter(avg_rating__gte=float(min_rating))
+        # 평점 필터 제거됨
         
         # 정렬
         sort_by = form.cleaned_data.get('sort_by')

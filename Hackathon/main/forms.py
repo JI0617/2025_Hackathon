@@ -83,9 +83,8 @@ class UserPreferenceForm(forms.ModelForm):
 class ReviewForm(forms.ModelForm):
     class Meta:
         model = Review
-        fields = ['rating', 'comment']
+        fields = ['comment']
         widgets = {
-            'rating': forms.Select(choices=[(i, f"{i}점") for i in range(1, 6)]),
             'comment': forms.Textarea(attrs={'rows': 4, 'placeholder': '이 지역에 대한 경험을 공유해주세요...'}),
         }
 
