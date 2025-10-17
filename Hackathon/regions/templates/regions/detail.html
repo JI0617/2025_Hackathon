@@ -1,0 +1,503 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ region.name }} 상세정보{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-8">
+    <!-- 지역 기본 정보 -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h2><i class="bi bi-geo-alt-fill text-primary"></i> {{ region.name }} 상세 정보</h2>
+        <p class="text-muted mb-0">{{ region.city }}</p>
+      </div>
+      <div class="card-body">
+        <!-- 점수 시각화 -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h5><i class="bi bi-bar-chart"></i> 지역 점수 분석</h5>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="text-center">
+                  <canvas id="scoreRadarChart" width="300" height="300"></canvas>
+                </div>
+              </div>
+              <div class="col-md-8">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <div class="card border-success">
+                      <div class="card-body text-center">
+                        <i class="bi bi-bus-front text-success fs-1"></i>
+                        <h5 class="mt-2">교통</h5>
+                        <div class="progress mb-2" style="height: 20px;">
+                          <div class="progress-bar bg-success" role="progressbar" 
+                               style="width: {% widthratio region.traffic_score 10 100 %}%">
+                            {{ region.traffic_score }}점
+                          </div>
+                        </div>
+                        <small class="text-muted">대중교통 편의성</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <div class="card border-info">
+                      <div class="card-body text-center">
+                        <i class="bi bi-mortarboard text-info fs-1"></i>
+                        <h5 class="mt-2">교육</h5>
+                        <div class="progress mb-2" style="height: 20px;">
+                          <div class="progress-bar bg-info" role="progressbar" 
+                               style="width: {% widthratio region.education_score 10 100 %}%">
+                            {{ region.education_score }}점
+                          </div>
+                        </div>
+                        <small class="text-muted">교육 환경</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <div class="card border-danger">
+                      <div class="card-body text-center">
+                        <i class="bi bi-hospital text-danger fs-1"></i>
+                        <h5 class="mt-2">의료</h5>
+                        <div class="progress mb-2" style="height: 20px;">
+                          <div class="progress-bar bg-danger" role="progressbar" 
+                               style="width: {% widthratio region.medical_score 10 100 %}%">
+                            {{ region.medical_score }}점
+                          </div>
+                        </div>
+                        <small class="text-muted">의료시설 접근성</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <div class="card border-warning">
+                      <div class="card-body text-center">
+                        <i class="bi bi-cash-coin text-warning fs-1"></i>
+                        <h5 class="mt-2">생활비</h5>
+                        <div class="mb-2">
+                          {% if region.cost_level == '매우낮음' %}
+                            <span class="badge bg-success fs-6">{{ region.cost_level }}</span>
+                          {% elif region.cost_level == '낮음' %}
+                            <span class="badge bg-success fs-6">{{ region.cost_level }}</span>
+                          {% elif region.cost_level == '보통' %}
+                            <span class="badge bg-warning fs-6">{{ region.cost_level }}</span>
+                          {% elif region.cost_level == '높음' %}
+                            <span class="badge bg-danger fs-6">{{ region.cost_level }}</span>
+                          {% else %}
+                            <span class="badge bg-danger fs-6">{{ region.cost_level }}</span>
+                          {% endif %}
+                        </div>
+                        <small class="text-muted">생활비 수준</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 상세 점수 정보 -->
+        <div class="row">
+          <div class="col-md-6">
+            <h5><i class="bi bi-bus-front text-success"></i> 교통 정보</h5>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between">
+                <span>교통 점수</span>
+                <span class="fw-bold">{{ region.traffic_score }}점</span>
+              </div>
+              <div class="progress">
+                <div class="progress-bar bg-success" style="width: {% widthratio region.traffic_score 10 100 %}%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h5><i class="bi bi-mortarboard text-info"></i> 교육 정보</h5>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between">
+                <span>교육 점수</span>
+                <span class="fw-bold">{{ region.education_score }}점</span>
+              </div>
+              <div class="progress">
+                <div class="progress-bar bg-info" style="width: {% widthratio region.education_score 10 100 %}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <h5><i class="bi bi-hospital text-danger"></i> 의료시설 정보</h5>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between">
+                <span>의료시설 점수</span>
+                <span class="fw-bold">{{ region.medical_score }}점</span>
+              </div>
+              <div class="progress">
+                <div class="progress-bar bg-danger" style="width: {{ region.medical_score }}%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h5><i class="bi bi-currency-dollar text-warning"></i> 생활비 정보</h5>
+            <p class="mb-3">
+              <span class="badge bg-{% if region.cost_level == '매우낮음' %}success{% elif region.cost_level == '낮음' %}info{% elif region.cost_level == '보통' %}warning{% elif region.cost_level == '높음' %}danger{% else %}dark{% endif %} fs-6">
+                {{ region.cost_level }}
+              </span>
+            </p>
+          </div>
+        </div>
+        
+        {% if region.population %}
+        <div class="row">
+          <div class="col-md-6">
+            <h5><i class="bi bi-people text-secondary"></i> 인구 정보</h5>
+            <p class="mb-3">
+              <span class="fw-bold">{{ region.population|floatformat:0 }}명</span>
+            </p>
+          </div>
+        </div>
+        {% endif %}
+        
+        {% if region.description %}
+        <div class="mt-4">
+          <h5><i class="bi bi-info-circle text-primary"></i> 지역 설명</h5>
+          <p class="text-muted">{{ region.description }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 리뷰 섹션 -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h3><i class="bi bi-chat-dots"></i> 사용자 리뷰</h3>
+        <div>
+          <span class="text-warning">
+            {% for i in "12345" %}
+              {% if forloop.counter <= avg_rating %}
+                <i class="bi bi-star-fill"></i>
+              {% else %}
+                <i class="bi bi-star"></i>
+              {% endif %}
+            {% endfor %}
+          </span>
+          <span class="ms-2">({{ avg_rating }}점, {{ review_count }}개 리뷰)</span>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if reviews %}
+          {% for review in reviews %}
+            <div class="border-bottom pb-3 mb-3">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="mb-1">{{ review.user.username }}</h6>
+                  <div class="text-warning mb-2">
+                    {% for i in "12345" %}
+                      {% if forloop.counter <= review.rating %}
+                        <i class="bi bi-star-fill"></i>
+                      {% else %}
+                        <i class="bi bi-star"></i>
+                      {% endif %}
+                    {% endfor %}
+                    <span class="text-muted ms-1">{{ review.rating }}점</span>
+                  </div>
+                </div>
+                <small class="text-muted">{{ review.created_at|date:"Y-m-d" }}</small>
+              </div>
+              <p class="mb-0">{{ review.comment }}</p>
+            </div>
+          {% endfor %}
+          
+          {% if review_count > 5 %}
+            <div class="text-center">
+              <a href="#" class="btn btn-outline-primary">더 많은 리뷰 보기</a>
+            </div>
+          {% endif %}
+        {% else %}
+          <p class="text-muted text-center py-3">아직 리뷰가 없습니다.</p>
+        {% endif %}
+        
+        {% if user.is_authenticated %}
+          {% if user_review %}
+            <div class="alert alert-info">
+              <h6><i class="bi bi-info-circle"></i> 내 리뷰</h6>
+              <div class="text-warning mb-2">
+                {% for i in "12345" %}
+                  {% if forloop.counter <= user_review.rating %}
+                    <i class="bi bi-star-fill"></i>
+                  {% else %}
+                    <i class="bi bi-star"></i>
+                  {% endif %}
+                {% endfor %}
+                <span class="text-muted ms-1">{{ user_review.rating }}점</span>
+              </div>
+              <p class="mb-0">{{ user_review.comment }}</p>
+            </div>
+          {% else %}
+            <div class="mt-4">
+              <h6><i class="bi bi-pencil"></i> 리뷰 작성</h6>
+              <form method="post" action="{% url 'add_review' region.name %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                  <label class="form-label">평점</label>
+                  {{ review_form.rating }}
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">리뷰</label>
+                  {{ review_form.comment }}
+                </div>
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-send"></i> 리뷰 등록
+                </button>
+              </form>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> 
+            리뷰를 작성하려면 <a href="{% url 'login' %}">로그인</a>이 필요합니다.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- 사이드바 -->
+  <div class="col-lg-4">
+    <!-- 빠른 액션 -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5><i class="bi bi-lightning"></i> 빠른 액션</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <a href="{% url 'calculator' %}" class="btn btn-outline-primary">
+            <i class="bi bi-calculator"></i> 생활비 계산
+          </a>
+          {% if user.is_authenticated %}
+            <a href="{% url 'comparison_list' %}" class="btn btn-outline-info">
+              <i class="bi bi-bar-chart"></i> 다른 지역과 비교
+            </a>
+            <a href="{% url 'home' %}#recommendation" class="btn btn-outline-warning" onclick="openRecommendationModal()">
+              <i class="bi bi-star"></i> 추천받기
+            </a>
+          {% else %}
+            <a href="{% url 'register' %}" class="btn btn-outline-success">
+              <i class="bi bi-person-plus"></i> 회원가입
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- 통계 정보 -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5><i class="bi bi-graph-up"></i> 통계</h5>
+      </div>
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-6">
+            <div class="border-end">
+              <h4 class="text-primary">{{ region.traffic_score }}</h4>
+              <small class="text-muted">교통점수</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <h4 class="text-info">{{ region.education_score }}</h4>
+            <small class="text-muted">교육점수</small>
+          </div>
+        </div>
+        <hr>
+        <div class="row text-center">
+          <div class="col-6">
+            <div class="border-end">
+              <h4 class="text-warning">{{ avg_rating }}</h4>
+              <small class="text-muted">평균평점</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <h4 class="text-success">{{ review_count }}</h4>
+            <small class="text-muted">리뷰수</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 지도 섹션 -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h4><i class="bi bi-geo-alt-fill text-primary"></i> 위치 정보</h4>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-8">
+        <div id="regionMap" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+      </div>
+      <div class="col-md-4">
+        <h6><i class="bi bi-info-circle"></i> 위치 상세</h6>
+        <div class="mb-3">
+          <strong>지역명:</strong> {{ region.name }}<br>
+          <strong>소속 시/도:</strong> {{ region.city }}<br>
+          <strong>위도:</strong> {{ region.latitude }}°<br>
+          <strong>경도:</strong> {{ region.longitude }}°
+        </div>
+        <h6><i class="bi bi-geo-alt"></i> 주변 정보</h6>
+        <ul class="list-unstyled">
+          <li><i class="bi bi-train-front text-primary"></i> 교통편: {{ region.traffic_score }}점</li>
+          <li><i class="bi bi-book text-info"></i> 교육환경: {{ region.education_score }}점</li>
+          <li><i class="bi bi-hospital text-danger"></i> 의료시설: {{ region.medical_score }}점</li>
+        </ul>
+        <div class="mt-3">
+          <button class="btn btn-outline-primary btn-sm" onclick="getDirections()">
+            <i class="bi bi-navigation"></i> 길찾기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4">
+  <a href="{% url 'home' %}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> 목록으로 돌아가기
+  </a>
+</div>
+
+<script>
+function initMap() {
+    const regionLocation = [{{ region.latitude }}, {{ region.longitude }}];
+    
+    const map = L.map('regionMap').setView(regionLocation, 13);
+    
+    // OpenStreetMap 타일 레이어 추가
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // 커스텀 아이콘 생성
+    const customIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `
+            <div style="
+                width: 40px; 
+                height: 40px; 
+                background-color: #007bff; 
+                border: 3px solid white; 
+                border-radius: 50%; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                color: white; 
+                font-weight: bold; 
+                font-size: 14px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            ">
+                {{ region.name|slice:":2" }}
+            </div>
+        `,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+    
+    const marker = L.marker(regionLocation, { icon: customIcon }).addTo(map);
+    
+    // 팝업 내용
+    const popupContent = `
+        <div style="padding: 10px;">
+            <h6 style="margin: 0 0 5px 0;">{{ region.name }}</h6>
+            <p style="margin: 0; font-size: 12px; color: #666;">{{ region.city }}</p>
+            <div style="margin: 8px 0;">
+                <div style="font-size: 11px;">교통: {{ region.traffic_score }}점</div>
+                <div style="font-size: 11px;">교육: {{ region.education_score }}점</div>
+                <div style="font-size: 11px;">의료: {{ region.medical_score }}점</div>
+            </div>
+        </div>
+    `;
+    
+    marker.bindPopup(popupContent).openPopup();
+}
+
+function getDirections() {
+    const url = `https://www.google.com/maps/dir/?api=1&destination={{ region.latitude }},{{ region.longitude }}`;
+    window.open(url, '_blank');
+}
+
+// 레이더 차트 생성
+function createRadarChart() {
+    const ctx = document.getElementById('scoreRadarChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['교통', '교육', '의료', '생활비'],
+            datasets: [{
+                label: '{{ region.name }}',
+                data: [
+                    {{ region.traffic_score }},
+                    {{ region.education_score }},
+                    {{ region.medical_score }},
+                    {% if region.cost_level == '매우낮음' %}9
+                    {% elif region.cost_level == '낮음' %}7
+                    {% elif region.cost_level == '보통' %}5
+                    {% elif region.cost_level == '높음' %}3
+                    {% else %}1{% endif %}
+                ],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 10,
+                    ticks: {
+                        stepSize: 2
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed.r;
+                            if (label === '생활비') {
+                                const costLevels = ['매우높음', '높음', '보통', '낮음', '매우낮음'];
+                                return `${label}: ${costLevels[Math.round(value) - 1] || '매우높음'}`;
+                            }
+                            return `${label}: ${value}점`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 페이지 로드 시 지도 초기화 및 차트 생성
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+    createRadarChart();
+});
+</script>
+{% endblock %} 
