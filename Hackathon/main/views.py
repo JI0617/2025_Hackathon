@@ -500,9 +500,24 @@ def advanced_search(request):
     if request.user.is_authenticated:
         saved_searches = SavedSearch.objects.filter(user=request.user)[:5]
     
+    # 안전한 표시용 필드 추가
+    for r in regions:
+        try:
+            pop = int(r.population) if getattr(r, 'population', None) not in (None, '') else None
+        except Exception:
+            pop = None
+        try:
+            area = float(getattr(r, 'area', None)) if getattr(r, 'area', None) not in (None, '') else None
+        except Exception:
+            area = None
+
+        r.population_display = f"{pop:,}명" if pop else None
+        r.area_display = f"{area:.1f} km²" if area else None
+        r.density_display = f"{(pop/area):.1f}명/km²" if pop and area and area > 0 else None
+
     context = {
         'form': form,
-        'regions': page_obj,
+        'regions': regions,
         'saved_searches': saved_searches,
         'total_regions': regions.count(),
     }

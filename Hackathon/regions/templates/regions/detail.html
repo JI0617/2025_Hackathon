@@ -126,16 +126,43 @@
           </div>
         </div>
         
-        {% if region.population %}
+        <!-- 인구/면적 표시 (안전 처리) -->
         <div class="row">
           <div class="col-md-6">
             <h5><i class="bi bi-people text-secondary"></i> 인구 정보</h5>
             <p class="mb-3">
-              <span class="fw-bold">{{ region.population|floatformat:0 }}명</span>
+              {% if region.population_display %}
+                <span class="fw-bold">{{ region.population_display }}</span>
+              {% else %}
+                <span class="text-muted">데이터 없음</span>
+              {% endif %}
+            </p>
+          </div>
+          <div class="col-md-6">
+            <h5><i class="bi bi-aspect-ratio text-secondary"></i> 면적</h5>
+            <p class="mb-3">
+              {% if region.area_display %}
+                <span class="fw-bold">{{ region.area_display }}</span>
+              {% else %}
+                <span class="text-muted">데이터 없음</span>
+              {% endif %}
             </p>
           </div>
         </div>
-        {% endif %}
+
+        <!-- 인구밀도 -->
+        <div class="row">
+          <div class="col-md-12">
+            <h5><i class="bi bi-grid-3x3-gap text-secondary"></i> 인구밀도</h5>
+            <p class="mb-3">
+              {% if region.density_display %}
+                <span class="fw-bold">{{ region.density_display }}</span>
+              {% else %}
+                <span class="text-muted">데이터 없음</span>
+              {% endif %}
+            </p>
+          </div>
+        </div>
         
         {% if region.description %}
         <div class="mt-4">
@@ -464,4 +491,4 @@ document.addEventListener('DOMContentLoaded', function() {
     createRadarChart();
 });
 </script>
-{% endblock %} 
+{% endblock %}

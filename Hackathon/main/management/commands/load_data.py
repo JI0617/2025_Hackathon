@@ -23,10 +23,12 @@ header_map = {
     '교육 인프라 등급': 'education_infra_grade',
     '월세등급': 'monthly_rent_grade',
     'summary': 'summary',
+    '인구수': 'population',
+    '면적': 'area',
 }
 
 class Command(BaseCommand):
-    help = 'Loads region data from the 통합_테이블.csv file into the Region model.'
+    help = 'Loads region data from the final integrated CSV file into the Region model.'
 
     def handle(self, *args, **options):
         self.stdout.write("데이터 로딩 시작...")
@@ -41,47 +43,67 @@ class Command(BaseCommand):
 
         # 2. 새로운 데이터 로딩 (CSV 중복 처리 및 인코딩/공백 제거 강화)
         try:
-            # ⭐ 수정 1: 인코딩을 'utf-8-sig'로 변경하고 newline='' 옵션 유지 ⭐
             with open(csv_file_path, 'r', encoding='utf-8-sig', newline='') as f:
                 reader = csv.DictReader(f)
                 
-                # 딕셔너리를 사용하여 region_name을 키로 중복을 방지합니다.
                 unique_regions_data = {}
                 
                 for row in reader:
                     data = {}
-                    current_region_name = None # 현재 행의 region_name을 저장할 변수
+                    current_region_name = None
 
                     for csv_header, model_field in header_map.items():
                         value = row.get(csv_header, '')
+                        if isinstance(value, str) and (value.lower() == 'nan' or value.strip() == ''):
+                            value = ''
 
-                        # 데이터 유형 변환
                         if model_field == 'name':
-                            # ⭐ 수정 2 (핵심): region_name 값에서 양쪽의 모든 공백/제어 문자 제거 ⭐
-                            # .strip()을 통해 보이지 않는 \r, \n, 공백 등을 제거하여 고유성을 보장합니다.
                             current_region_name = value.strip()
-                            data[model_field] = current_region_name
-                            
-                        elif model_field in ['student_count', 'teacher_count']:
-                            data[model_field] = int(float(value)) if value and value.replace('.', '', 1).isdigit() else 0
+                            data[model_field] = current_region_name or None
+
+                        elif model_field in ['student_count', 'teacher_count', 'population']:
+                            # 빈값 -> None, 숫자 문자열 -> int
+                            try:
+                                data[model_field] = int(float(value)) if value != '' else None
+                            except Exception:
+                                data[model_field] = None
+                                
                         elif model_field in ['medical_accessibility', 'students_per_teacher']:
-                            data[model_field] = float(value) if value and value.replace('.', '', 1).isdigit() else 0.0
+                            try:
+                                data[model_field] = float(value) if value != '' else None
+                            except Exception:
+                                data[model_field] = None
+                                
+                        elif model_field == 'area':
+                            # 면적: 빈값 -> None. 값이 크면 m^2로 추정하여 km^2로 변환
+                            try:
+                                if value != '':
+                                    area_val = float(value)
+                                    # 만약 값이 매우 크면 m^2 단위로 들어왔을 가능성 -> km^2로 변환
+                                    if area_val > 1_000_000:  # 임계값: 1,000,000 m^2 = 1 km^2
+                                        area_val = area_val / 1_000_000.0
+                                    data[model_field] = area_val
+                                else:
+                                    data[model_field] = None
+                            except Exception:
+                                data[model_field] = None
+                                
                         elif model_field in ['deposit_manwon', 'monthly_rent_manwon', 'total_monthly_burden']:
                             try:
-                                data[model_field] = Decimal(value) if value else Decimal('0.00')
-                            except:
-                                data[model_field] = Decimal('0.00')
+                                clean_value = str(value).replace(',', '').strip()
+                                data[model_field] = Decimal(clean_value) if clean_value != '' else None
+                            except Exception:
+                                data[model_field] = None
+                        
                         else:
-                            data[model_field] = value
+                            data[model_field] = value.strip() if isinstance(value, str) and value.strip() != '' else None
                     
-                    # region_name을 키로 사용하여 저장: 중복이 있으면 덮어쓰여 유일성 보장
                     if current_region_name:
                         unique_regions_data[current_region_name] = data
 
-                # 딕셔너리의 값(데이터)을 Region 객체로 변환
+                # 변환된 dict에서 Region 객체 생성 (필드에 None 허용)
                 regions_to_create = [Region(**data) for data in unique_regions_data.values()]
                 
-                # Bulk Create 실행
                 Region.objects.bulk_create(regions_to_create)
                 
                 total_rows_read = len(unique_regions_data) + (reader.line_num - 1 - len(unique_regions_data))
@@ -94,3 +116,4 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"❌ 오류: 파일을 찾을 수 없습니다. 경로를 확인하세요: {csv_file_path}"))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"❌ 데이터 로딩 중 오류 발생: {e}"))
+            # self.stdout.write(self.style.ERROR(f"마지막 처리된 데이터: {data}"))

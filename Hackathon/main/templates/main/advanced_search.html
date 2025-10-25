@@ -349,11 +349,19 @@
                             <div class="row text-center mb-3">
                                 <div class="col-6">
                                     <small class="text-muted">인구</small><br>
+                                    {% if region.population %}
                                     <strong>{{ region.population|floatformat:0 }}명</strong>
+                                    {% else %}
+                                    <strong class="text-muted">데이터 없음</strong>
+                                    {% endif %}
                                 </div>
                                 <div class="col-6">
                                     <small class="text-muted">면적</small><br>
-                                    <strong>{{ region.area }}km²</strong>
+                                    {% if region.area %}
+                                    <strong>{{ region.area|floatformat:1 }} km²</strong>
+                                    {% else %}
+                                    <strong class="text-muted">데이터 없음</strong>
+                                    {% endif %}
                                 </div>
                             </div>
                             

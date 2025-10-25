@@ -206,6 +206,37 @@
   </a>
 </div>
 
+<div class="region-meta mb-4">
+    <h4 class="mb-2">{{ region.name }}</h4>
+    <div class="row">
+        <div class="col-md-4">
+            <small class="text-muted">인구</small><br>
+            {% if region.population %}
+            <strong>{{ region.population|floatformat:0 }}명</strong>
+            {% else %}
+            <strong class="text-muted">데이터 없음</strong>
+            {% endif %}
+        </div>
+        <div class="col-md-4">
+            <small class="text-muted">면적</small><br>
+            {% if region.area %}
+            <strong>{{ region.area|floatformat:1 }} km²</strong>
+            {% else %}
+            <strong class="text-muted">데이터 없음</strong>
+            {% endif %}
+        </div>
+        <div class="col-md-4">
+            <small class="text-muted">인구밀도(명/km²)</small><br>
+            {% if region.population and region.area %}
+              {% widthratio region.population region.area 1 as density %}
+              <strong>{{ density }}명/km²</strong>
+            {% else %}
+              <strong class="text-muted">데이터 없음</strong>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // 차트 생성

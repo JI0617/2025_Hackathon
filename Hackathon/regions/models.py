@@ -24,8 +24,9 @@ class Region(models.Model):
     latitude = models.FloatField(default=0.0, verbose_name="위도")
     longitude = models.FloatField(default=0.0, verbose_name="경도")
     population = models.IntegerField(default=0, verbose_name="인구수")
+    area = models.FloatField(default=0.0, verbose_name="면적")
     
-    # ✨ 계산된 0-100점 점수를 저장할 필드 (DB 필드로만 사용)
+    # 계산된 0-100점 점수를 저장할 필드 (DB 필드로만 사용)
     medical_score = models.DecimalField(max_digits=5, decimal_places=2, default=50.0, verbose_name="의료 점수")
     education_score = models.DecimalField(max_digits=5, decimal_places=2, default=50.0, verbose_name="교육 점수")
     cost_score = models.DecimalField(max_digits=5, decimal_places=2, default=50.0, verbose_name="생활비 점수")
