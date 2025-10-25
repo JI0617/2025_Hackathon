@@ -7,7 +7,6 @@ from users.models import UserPreference
 import json
 
 @csrf_exempt
-@login_required
 @require_http_methods(["GET"])
 def get_recommendations(request):
     """개인화 추천 API"""
@@ -24,7 +23,7 @@ def get_recommendations(request):
         min_score = int(q.get('min_score')) if q.get('min_score') else None
 
         try:
-            saved_pref = request.user.userpreference
+            saved_pref = request.user.userpreference if request.user.is_authenticated else None
         except Exception:
             saved_pref = None
 
